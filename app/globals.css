@@ -1,0 +1,392 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * 审美权重：40% 无尽藏 · 30% 大藏经 AI · 20% Notion · 10% Medium
+ * 无尽藏：纸色温度、留白呼吸、沉浸仪式感
+ * 大藏经AI：经目卡片、白话层、段落解释
+ * Notion: 块状卡片、清晰层级、轻量导航
+ * Medium: 排版韵律、阅读节奏、衬线层次
+ */
+
+@theme {
+  /* 纸色系（无尽藏风格：温润纸张感） */
+  --color-jx-paper: #f7f4ef;
+  --color-jx-paper-deep: #f2ede6;
+  --color-jx-paper-elevated: #fffefb;
+  --color-jx-ink: #1c1917;
+  --color-jx-ink-light: #44403c;
+  --color-jx-muted: #78716c;
+  --color-jx-muted-label: #a8a29e;
+  --color-jx-border: #e8e2d9;
+  --color-jx-border-strong: #d4cdc1;
+  --color-jx-accent: #b45309;
+  --color-jx-accent-soft: #d97706;
+  --color-jx-accent-glow: #fbbf24;
+  --color-jx-warm: #f59e0b;
+  --color-jx-verse-bg: #fdf6e3;
+  --color-jx-verse-border: #e8d5b7;
+  --color-jx-sidebar-bg: #faf8f5;
+  --color-jx-sidebar-border: #e5dfd4;
+
+  /* 暗色纸系 */
+  --color-jx-dark-bg: #0c0a09;
+  --color-jx-dark-surface: #1c1917;
+  --color-jx-dark-elevated: #292524;
+  --color-jx-dark-border: #44403c;
+
+  /* 间距 */
+  --spacing-jx-section: 3.5rem;
+  --spacing-jx-card: 2rem;
+  --spacing-jx-page: 1rem;
+
+  /* 字号阶梯 */
+  --text-jx-xs: 0.7rem;
+  --text-jx-sm: 0.875rem;
+  --text-jx-base: 1rem;
+  --text-jx-lg: 1.125rem;
+  --text-jx-xl: 1.25rem;
+  --text-jx-2xl: 1.5rem;
+  --text-jx-3xl: 1.875rem;
+  --text-jx-verse: 2rem;
+
+  /* 阴影层级 */
+  --shadow-jx-sm: 0 1px 3px rgb(28 25 23 / 0.04), 0 4px 12px rgb(28 25 23 / 0.04);
+  --shadow-jx: 0 1px 3px rgb(28 25 23 / 0.06), 0 8px 24px rgb(180 83 9 / 0.06);
+  --shadow-jx-hover: 0 4px 28px rgb(180 83 9 / 0.12), 0 12px 40px rgb(28 25 23 / 0.08);
+  --shadow-jx-hero: 0 2px 6px rgb(28 25 23 / 0.05), 0 12px 36px rgb(180 83 9 / 0.08);
+  --shadow-jx-inset: inset 0 1px 2px rgb(28 25 23 / 0.06);
+
+  /* 圆角 */
+  --radius-jx-sm: 0.375rem;
+  --radius-jx: 0.5rem;
+  --radius-jx-lg: 0.75rem;
+  --radius-jx-xl: 1rem;
+  --radius-jx-2xl: 1.25rem;
+
+  /* 宽度 */
+  --width-jx-sidebar: 17.5rem;
+  --width-jx-content: 38rem;
+  --width-jx-page: 56rem;
+
+  /* 行高 */
+  --leading-jx: 1.8;
+  --leading-jx-tight: 1.6;
+  --leading-jx-loose: 2;
+}
+
+:root {
+  --jx-font-scale: 1;
+  --jx-leading: 1.8;
+  --jx-measure: 38rem;
+  --jx-sidebar-width: 17.5rem;
+  --jx-paper: #f7f4ef;
+  --jx-paper-deep: #f2ede6;
+  --jx-paper-elevated: #fffefb;
+  --jx-section-gap: 3.5rem;
+  --background: var(--jx-paper);
+  --foreground: #1c1917;
+  --muted: #78716c;
+  --jx-muted-label: #a8a29e;
+  --accent: #b45309;
+  --card: var(--jx-paper-elevated);
+  --border: #e8e2d9;
+  --jx-border-strong: #d4cdc1;
+  --jx-card-shadow: 0 1px 3px rgb(28 25 23 / 0.06), 0 8px 24px rgb(180 83 9 / 0.06);
+  --jx-card-shadow-hover: 0 4px 28px rgb(180 83 9 / 0.12), 0 12px 40px rgb(28 25 23 / 0.08);
+  --jx-sidebar-bg: #faf8f5;
+  --jx-sidebar-border: #e5dfd4;
+}
+
+.dark {
+  --jx-paper: #0c0a09;
+  --jx-paper-deep: #141210;
+  --jx-paper-elevated: #1c1917;
+  --background: var(--jx-paper);
+  --foreground: #fafaf9;
+  --muted: #a8a29e;
+  --jx-muted-label: #78716c;
+  --accent: #fbbf24;
+  --card: var(--jx-paper-elevated);
+  --border: #292524;
+  --jx-border-strong: #44403c;
+  --jx-card-shadow: 0 4px 20px rgb(0 0 0 / 0.35);
+  --jx-card-shadow-hover: 0 8px 32px rgb(251 191 36 / 0.1), 0 20px 48px rgb(0 0 0 / 0.3);
+  --jx-sidebar-bg: #141210;
+  --jx-sidebar-border: #292524;
+}
+
+/* ===== Typography ===== */
+
+@font-face {
+  font-family: "XuandongKai";
+  src: url("/fonts/xuandong-kaishu.ttf") format("truetype");
+  font-display: swap;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  font-size: calc(1rem * var(--jx-font-scale));
+  line-height: var(--jx-leading);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 纸纤维纹理（无尽藏式真实纸张感，1.5% 不透明度） */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  z-index: 0;
+}
+
+.dark body::before {
+  opacity: 0.025;
+}
+
+/* Medium 式排版韵律 */
+.prose-jx {
+  max-width: var(--jx-measure);
+  margin-inline: auto;
+  font-size: calc(1.125rem * var(--jx-font-scale));
+  letter-spacing: 0.02em;
+}
+
+.prose-jx p {
+  margin-bottom: 1.35em;
+  text-indent: 2em;
+  line-height: var(--jx-leading);
+}
+
+.prose-jx p:first-of-type {
+  text-indent: 0;
+  font-size: calc(1.2rem * var(--jx-font-scale));
+}
+
+/* 无尽藏式段间距——宽松呼吸 */
+.prose-jx p + p {
+  margin-top: -0.5em;
+}
+
+/* ===== 页面容器 ===== */
+
+.jx-page {
+  max-width: var(--width-jx-page);
+  margin-inline: auto;
+  padding-inline: var(--spacing-jx-page);
+  padding-block: var(--spacing-jx-section);
+}
+
+/* ===== 区块小标题（Notion 式轻量） ===== */
+
+.jx-section-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--jx-muted-label);
+  position: relative;
+}
+
+.jx-section-label::after {
+  content: "";
+  display: block;
+  width: 1.5rem;
+  height: 1px;
+  background: var(--jx-border-strong);
+  margin-top: 0.5rem;
+  opacity: 0.6;
+}
+
+/* ===== 输入框 ===== */
+
+.jx-input {
+  flex: 1;
+  border-radius: var(--radius-jx-lg);
+  border: 1px solid var(--jx-border);
+  background: var(--jx-paper-elevated);
+  padding: 0.625rem 1.125rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  outline: none;
+  font-family: inherit;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.jx-input:focus {
+  border-color: rgb(180 83 9 / 0.45);
+  box-shadow: 0 0 0 3px rgb(180 83 9 / 0.1);
+}
+
+.jx-input::placeholder {
+  color: var(--jx-muted-label);
+}
+
+/* ===== 卡片体系 ===== */
+
+.jx-list-card {
+  border: 1px solid var(--jx-border);
+  background: var(--card);
+  box-shadow: var(--jx-card-shadow);
+  border-radius: var(--radius-jx-lg);
+}
+
+.jx-sutra-card {
+  border: 1px solid var(--jx-border);
+  background: var(--card);
+  box-shadow: var(--jx-card-shadow);
+  border-radius: var(--radius-jx-lg);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.jx-sutra-card:hover {
+  border-color: rgb(180 83 9 / 0.35);
+  box-shadow: var(--jx-card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* ===== 分享卡片 / 经句卡片 ===== */
+
+.share-card {
+  box-shadow: var(--jx-card-shadow);
+  transition: box-shadow 0.3s ease;
+}
+
+.share-card:hover {
+  box-shadow: var(--jx-card-shadow-hover);
+}
+
+/* 无尽藏式经文引述框 */
+.jx-verse-quote {
+  background: linear-gradient(
+    135deg,
+    var(--jx-paper-elevated) 0%,
+    #fdf6e3 100%
+  );
+  border: 1px solid #e8d5b7;
+  border-left: 3px solid var(--jx-accent);
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-jx);
+  font-style: italic;
+  color: var(--jx-ink-light);
+}
+
+.dark .jx-verse-quote {
+  background: linear-gradient(
+    135deg,
+    var(--jx-dark-surface) 0%,
+    #1a1614 100%
+  );
+  border-color: #44403c;
+  border-left-color: var(--accent);
+}
+
+/* ===== AI 面板 ===== */
+
+.jx-ai-panel {
+  width: 100%;
+  max-width: var(--jx-sidebar-width);
+  background: var(--jx-sidebar-bg);
+  border: 1px solid var(--jx-sidebar-border);
+  border-radius: var(--radius-jx-lg);
+}
+
+/* ===== 阅读器装饰 ===== */
+
+/* 首段大首字（无尽藏式仪式感 — 仅阅读器正文） */
+.prose-jx.reader-body > p:first-of-type::first-letter {
+  font-size: 1.6em;
+  float: left;
+  line-height: 1;
+  margin-right: 0.1em;
+  color: var(--jx-accent);
+  font-weight: 600;
+}
+
+/* 分隔线装饰 */
+.jx-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    var(--jx-border) 20%,
+    var(--jx-border) 80%,
+    transparent 100%
+  );
+  margin: 2.5rem 0;
+}
+
+/* 专题 hero 装饰线 */
+.jx-topic-hero {
+  background: linear-gradient(
+    135deg,
+    var(--jx-paper-elevated) 0%,
+    #fdf6e3 60%,
+    #f5e6c8 100%
+  );
+}
+
+.dark .jx-topic-hero {
+  background: linear-gradient(
+    135deg,
+    var(--jx-dark-surface) 0%,
+    #1a1614 60%,
+    #141010 100%
+  );
+}
+
+/* ===== Ruby（拼音注音） ===== */
+
+.jx-ruby ruby {
+  ruby-align: center;
+}
+
+.jx-ruby rt {
+  font-size: 0.55em;
+  opacity: 0.75;
+  letter-spacing: 0;
+  user-select: none;
+}
+
+/* ===== 缺字 ===== */
+
+.gaiji-fallback {
+  color: var(--accent);
+  font-size: 0.85em;
+}
+
+/* ===== 动画 ===== */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-slow {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-jx-fade {
+  animation: fade-in 0.4s ease-out;
+}
+
+.animate-jx-fade-slow {
+  animation: fade-in-slow 0.6s ease-out;
+}
+
+/* ===== 暗色模式平滑过渡 ===== */
+
+@media (prefers-reduced-motion: no-preference) {
+  body, .jx-sutra-card, .jx-input, .share-card {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+}

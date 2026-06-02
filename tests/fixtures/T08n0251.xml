@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt><title>般若波羅蜜多心經</title></titleStmt>
+      <publicationStmt><p>唐三藏法師玄奘譯</p></publicationStmt>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <p>觀自在菩薩行深般若波羅蜜多時照見五蘊皆空度一切苦厄</p>
+      <p>舍利子色不異空空不異色色即是空空即是色</p>
+      <p>受想行識亦復如是</p>
+      <p>舍利子是諸法空相不生不滅不垢不淨不增不減</p>
+      <p>故說般若波羅蜜多即咒曰揭諦揭諦波羅揭諦波羅僧揭諦菩提薩婆訶</p>
+    </body>
+  </text>
+</TEI>

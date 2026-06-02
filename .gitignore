@@ -1,0 +1,48 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+/playwright-report
+/test-results
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+.env
+.env*.local
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# data
+/data/*.db
+/data/*.db-*
+/vendor/xml-p5/
+
+# markdown sutras corpus (separate git repo)
+/chinese-sutras-md/
+
+# full canon corpus (local gen only)
+/corpus-full/sutras/
+/corpus-full/logs/
+/corpus-full/catalog.json
+
+# typescript
+next-env.d.ts

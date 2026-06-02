@@ -1,0 +1,22 @@
+[
+  { "phrase": "色即是空", "sutra": "xinjing", "forbidInResponse": ["法华经", "不存在经名"] },
+  { "phrase": "空即是色", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "应无所住而生其心", "sutra": "jingangjing", "forbidInResponse": [] },
+  { "phrase": "凡所有相皆是虚妄", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "南无阿弥陀佛", "sutra": "amituojing", "forbidInResponse": [] },
+  { "phrase": "观自在菩萨", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "如是灭", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "无无明", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "究竟涅槃", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "阿耨多罗", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "菩提萨埵", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "依般若波罗蜜多", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "心无挂碍", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "远离颠倒梦想", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "三世诸佛", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "得阿耨多罗三藐三菩提", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "故说般若波罗蜜", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "是大神咒", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "揭谛揭谛", "sutra": "xinjing", "forbidInResponse": [] },
+  { "phrase": "菩提萨婆诃", "sutra": "xinjing", "forbidInResponse": [] }
+]

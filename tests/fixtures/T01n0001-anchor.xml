@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt><title>長阿含經</title></titleStmt>
+      <publicationStmt><availability><p>test fixture</p></availability></publicationStmt>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <pb n="0001"/>
+      <lb n="a01"/>
+      <p xml:id="pT01p0001a0101">如是我聞。</p>
+      <lb n="a02"/>
+      <p xml:id="pT01p0001a0201">一時佛在舍衛國。</p>
+      <lb n="a09"/>
+      <p xml:id="pT01p0001a0901">佛告諸比丘：</p>
+      <lb n="a12"/>
+      <p xml:id="pT01p0001a1201">若有善男子善女人。</p>
+    </body>
+  </text>
+</TEI>
+

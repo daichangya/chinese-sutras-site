@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"npx vitest run tests/copybook/ 2>&1\",\"timeout\":60000,\"description\":\"Run copybook tests\"}",
+  "error": "Exit code 1\n\n RUN  v3.2.4 /Users/changyadai/IdeaProjects/jingxin\n\n ✓ tests/copybook/text-utils.test.ts (6 tests) 3ms\n ✓ tests/copybook/mvp-canon.test.ts (3 tests) 2ms\n ✓ tests/copybook/grid-renderer.test.ts (10 tests) 3ms\n ✓ tests/copybook/font-loader.test.ts (3 tests) 2ms\n ❯ tests/copybook/char-coverage.test.ts (4 tests | 1 failed) 6ms\n   ✓ checkCoverage > 空文本返回零结果 2ms\n   ✓ checkCoverage > 简体字在玄冬楷书中有覆盖 0ms\n   ✓ checkCoverage > 未知字体返回空覆盖 0ms\n   × checkCoverage > 覆盖率百分比计算正确 2ms\n     → Cannot find...",
+  "timestamp": "2026-06-02T09:28:52.111Z",
+  "retry_count": 1
+}

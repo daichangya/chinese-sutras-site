@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:cb="http://www.cbeta.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt><title>新譯大方廣佛華嚴經音義</title></titleStmt>
+      <publicationStmt><availability><p>test fixture</p></availability></publicationStmt>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <p xml:id="pA091p0312b0303">
+        冊，測革反。《說文》曰：「，符命也。」謂上聖符信教命，以授帝位。字或從竹，或古為冊，形也。
+        <p xml:id="pA091p0312b0505" rend="margin-left:1em inline"/>
+      </p>
+      <p xml:id="pA091p0312b0501">
+        「造」謂造作。「化」為變化。《尒雅》曰：「權輿，始也。」
+        <p xml:id="pA091p0312b0703" rend="margin-left:1em inline"/>
+      </p>
+      <p xml:id="pT30p0279a2507" rend="inline">云何眼識自性？謂依眼，了別色。</p>
+      <p xml:id="pChoiceDemo">
+        勘誤示例<choice><sic>彽徊</sic><corr>遲迴</corr></choice>。
+      </p>
+    </body>
+  </text>
+</TEI>

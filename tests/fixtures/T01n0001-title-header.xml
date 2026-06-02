@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:cb="http://www.cbeta.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title level="s">Taishō Tripiṭaka</title>
+        <title level="s" xml:lang="zh-Hant">大正新脩大藏經</title>
+        <title level="m" xml:lang="zh-Hant">長阿含經</title>
+        <title>Taishō Tripiṭaka, Electronic version, No. 1 長阿含經</title>
+        <title xml:lang="zh-Hant">大正新脩大藏經數位版, No. 1 長阿含經</title>
+        <author>後秦 佛陀耶舍共竺佛念譯</author>
+      </titleStmt>
+      <publicationStmt>
+        <availability>
+          <p>Available for non-commercial use when distributed with this header intact.</p>
+        </availability>
+      </publicationStmt>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <p>如是我聞。</p>
+    </body>
+  </text>
+</TEI>
