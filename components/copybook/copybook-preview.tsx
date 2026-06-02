@@ -20,19 +20,21 @@ export function CopybookPreview({
   config: CopybookRenderConfig | null;
   autoGenerate?: boolean;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { ready: fontReady } = useCopybookFont();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { ready: fontReady } = useCopybookFont(config?.fontChoice ?? "xuandong");
   const [hasPreview, setHasPreview] = useState(false);
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   const generate = useCallback(() => {
-    if (!config?.text || !containerRef.current) return;
+    if (!config?.text || !canvasRef.current) return;
     const canvas = renderCopybookCanvas(config);
-    canvasRef.current = canvas;
-    containerRef.current.innerHTML = "";
-    canvas.className = "mx-auto max-w-full rounded border border-[var(--jx-border)]";
-    canvas.setAttribute("data-testid", "copybook-canvas");
-    containerRef.current.appendChild(canvas);
+    canvasRef.current.width = canvas.width;
+    canvasRef.current.height = canvas.height;
+    const ctx = canvasRef.current.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(canvas, 0, 0);
+    }
+    setDataUrl(canvas.toDataURL("image/png"));
     setHasPreview(true);
   }, [config]);
 
@@ -43,23 +45,21 @@ export function CopybookPreview({
   }, [autoGenerate, fontReady, config, generate]);
 
   function downloadPng() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!dataUrl || !config) return;
     const a = document.createElement("a");
-    a.download = `${config?.title ?? "抄经字帖"}.png`;
-    a.href = canvas.toDataURL("image/png");
+    a.download = `${config.title}.png`;
+    a.href = dataUrl;
     a.click();
   }
 
   function downloadPdf() {
-    const canvas = canvasRef.current;
-    if (!canvas || !config) return;
+    if (!dataUrl || !config || !canvasRef.current) return;
     const pdf = new jsPDF({
-      orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+      orientation: canvasRef.current.width > canvasRef.current.height ? "landscape" : "portrait",
       unit: "px",
-      format: [canvas.width, canvas.height],
+      format: [canvasRef.current.width, canvasRef.current.height],
     });
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, canvas.width, canvas.height);
+    pdf.addImage(dataUrl, "PNG", 0, 0, canvasRef.current.width, canvasRef.current.height);
     pdf.save(`${config.title}.pdf`);
   }
 
@@ -100,7 +100,6 @@ export function CopybookPreview({
         </div>
       </div>
       <div
-        ref={containerRef}
         className="min-h-[240px] overflow-x-auto py-4 text-center"
         data-testid="copybook-preview-container"
       >
@@ -110,7 +109,13 @@ export function CopybookPreview({
           <p className="py-16 text-[var(--muted)]">书法字体加载中…</p>
         ) : !hasPreview ? (
           <p className="py-16 text-[var(--muted)]">点击「生成预览」查看字帖</p>
-        ) : null}
+        ) : (
+          <canvas
+            ref={canvasRef}
+            className="mx-auto max-w-full rounded border border-[var(--jx-border)]"
+            data-testid="copybook-canvas"
+          />
+        )}
       </div>
     </div>
   );
