@@ -46,6 +46,7 @@ yarn-error.log*
 /cbeta/
 /cbwork-bin/
 /fojin/
+/design-system/
 
 .vscode/
 .cursor/
