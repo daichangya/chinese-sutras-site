@@ -1,6 +1,6 @@
 /**
  * AI Prompt 模板
- * @author jingxin
+ * @author 代长亚
  */
 export const AI_DISCLAIMER =
   "以上内容由 AI 辅助生成，仅供学习参考，不能替代法师开示与权威注疏。若遇疑难，请向合格善知识请教。";

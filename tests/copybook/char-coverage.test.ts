@@ -1,6 +1,6 @@
 /**
  * 字符覆盖率测试
- * @author jingxin
+ * @author 代长亚
  */
 import { describe, expect, it } from "vitest";
 import { checkCoverage, coveragePercent, type CoverageResult } from "@/components/copybook/char-coverage";
@@ -16,7 +16,13 @@ describe("checkCoverage", () => {
   it("简体字在玄冬楷书中有覆盖", () => {
     const result = checkCoverage("观自在", "xuandong");
     expect(result.total).toBe(3);
-    expect(result.found).toBeGreaterThan(0);
+    expect(result.found).toBe(3);
+  });
+
+  it("繁体 觀 在玄冬楷书归一后算覆盖", () => {
+    const result = checkCoverage("觀", "xuandong");
+    expect(result.found).toBe(1);
+    expect(result.missing).toHaveLength(0);
   });
 
   it("未知字体返回空覆盖", () => {

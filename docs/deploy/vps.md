@@ -66,4 +66,82 @@ jingxin.example.com {
 
 ## 环境变量
 
-见项目根目录 `.env.example`：`DATA_DIR`、`AI_GATEWAY_URL`、`AI_GATEWAY_API_KEY`、`AI_MODEL`。
+见项目根目录 `.env.example`：`DATA_DIR`、`CORPUS_DIR`、`AI_GATEWAY_URL`、`AI_GATEWAY_API_KEY`、`AI_MODEL`。
+
+---
+
+## 2G 低内存部署（`JX_LOW_MEMORY=1`）
+
+适用于 2GB RAM VPS。主库去掉 `paragraph.text`（~500MB），阅读正文从语料 MD 按需加载；检索库仍在磁盘，首次搜索才打开。
+
+### 准备 swap（建议 2–4GB）
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+### 目录与语料
+
+```bash
+sudo mkdir -p /var/lib/jingxin
+export DATA_DIR=/var/lib/jingxin
+export CORPUS_DIR=/var/lib/jingxin/chinese-sutras-md
+# rsync 或 git clone chinese-sutras-md 到 CORPUS_DIR
+```
+
+### 一次性数据（勿在 VPS 上跑 backfill-text / fts:rebuild / corpus:import）
+
+在本地构建机生成 `jingxin-search.db` 后 rsync 到 VPS：
+
+```bash
+export JX_LOW_MEMORY=1
+export DATA_DIR=/var/lib/jingxin
+export CORPUS_DIR=/var/lib/jingxin/chinese-sutras-md
+
+npm run db:migrate:slim
+npm run data:health -- --strict
+```
+
+### pm2 示例
+
+```js
+module.exports = {
+  apps: [{
+    name: "jingxin",
+    script: "npm",
+    args: "start",
+    instances: 1,
+    env: {
+      JX_LOW_MEMORY: "1",
+      DATA_DIR: "/var/lib/jingxin",
+      CORPUS_DIR: "/var/lib/jingxin/chinese-sutras-md",
+      NODE_OPTIONS: "--max-old-space-size=512",
+    },
+  }],
+};
+```
+
+### 性能预期
+
+| 场景 | 全性能模式 | 低内存模式 |
+|------|-----------|------------|
+| 阅读首访（未缓存经） | ~800 ms | 2–5 s |
+| 阅读复访同经 | 快 | 快（LRU 命中） |
+| 搜索 | ~1–6 s | 相当（首次打开检索库略慢） |
+| 磁盘 | data ~4.2G | data ~4.2G + 语料 ~4.4G ≈ 9G |
+
+### 手动验收清单
+
+```bash
+JX_LOW_MEMORY=1 CORPUS_DIR=./chinese-sutras-md npm run data:health -- --strict
+JX_LOW_MEMORY=1 CORPUS_DIR=./chinese-sutras-md npm start
+```
+
+- [ ] 访问 `/sutra/t08n0235`（或任意 MVP 经）能显示正文
+- [ ] 连续打开 4 部经后 RSS 不持续增长（LRU 生效）
+- [ ] 访问 `/search?q=金刚经` 能返回结果（首次略慢）
+- [ ] 首页 `/` 正常加载（`daily_verse.snippet_text` 不触发全文加载）

@@ -1,24 +1,38 @@
 /**
  * Corpus V3 meta.yaml 读写
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
 import YAML from "yaml";
 import { blocksIndexPath } from "./blocks-index";
-import type { SutraMeta, SutraZaijiaMeta } from "./types";
-import { formatZaijiaSection, formatZaijiaTopic, getZaijiaMeta } from "@/lib/cbeta/zaijia-category";
+import type { SutraMeta, SutraBuleiMeta } from "./types";
+import { resolveBuleiMeta } from "@/lib/cbeta/bulei-catalog";
+import { toSimplifiedLabel } from "./sutra-labels";
+import { isReservedCorpusTopDir, resolveSutrasRoot } from "./paths";
 
-/** 从 zaijia.txt 补全 meta 子类（不改变 category） */
-export function zaijiaFieldsForCbetaId(cbetaId: string): SutraZaijiaMeta | undefined {
-  const zm = getZaijiaMeta(cbetaId);
-  if (!zm) return undefined;
-  const topic = formatZaijiaTopic(zm);
+/** meta.bulei 文本字段转简体 */
+export function simplifyBuleiMetaFields(bulei: SutraBuleiMeta): SutraBuleiMeta {
   return {
-    section: formatZaijiaSection(zm),
-    ...(topic ? { topic } : {}),
-    kind: zm.kind,
+    ...bulei,
+    section: bulei.section ? (toSimplifiedLabel(bulei.section) ?? bulei.section) : bulei.section,
+    group: bulei.group ? (toSimplifiedLabel(bulei.group) ?? bulei.group) : bulei.group,
+    path: bulei.path?.map((p) => toSimplifiedLabel(p) ?? p),
   };
+}
+
+/** 从 bulei 解析链补全 meta.bulei（字段为简体） */
+export function buleiFieldsForCbetaId(cbetaId: string): SutraBuleiMeta | undefined {
+  const bm = resolveBuleiMeta(cbetaId);
+  if (!bm) return undefined;
+  return simplifyBuleiMetaFields({
+    section_code: bm.sectionCode,
+    section: bm.sectionLabel,
+    group: bm.groupLabel,
+    path: bm.breadcrumbs.length > 0 ? bm.breadcrumbs : undefined,
+    kind: bm.kind,
+    source: bm.source,
+  });
 }
 
 export function writeSutraMeta(metaPath: string, meta: SutraMeta): void {
@@ -30,7 +44,7 @@ export function writeSutraMeta(metaPath: string, meta: SutraMeta): void {
     translator: meta.translator,
     dynasty: meta.dynasty,
     category: meta.category,
-    zaijia: meta.zaijia,
+    bulei: meta.bulei,
     juan_count: meta.juanCount,
     source_xml: meta.sourceXml,
     description: meta.description,
@@ -60,16 +74,19 @@ export function loadSutraMeta(metaPath: string): SutraMeta {
       ? [String(sourceRaw)]
       : [];
 
-  const zaijiaRaw = obj.zaijia as Record<string, unknown> | undefined;
-  const zaijia =
-    zaijiaRaw && typeof zaijiaRaw === "object"
+  const buleiRaw = obj.bulei as Record<string, unknown> | undefined;
+  const bulei: SutraBuleiMeta | undefined =
+    buleiRaw && typeof buleiRaw === "object"
       ? {
-          section: zaijiaRaw.section ? String(zaijiaRaw.section).trim() : undefined,
-          topic: zaijiaRaw.topic ? String(zaijiaRaw.topic).trim() : undefined,
+          section_code: String(buleiRaw.section_code ?? buleiRaw.sectionCode ?? "").trim(),
+          section: String(buleiRaw.section ?? "").trim(),
+          group: String(buleiRaw.group ?? "").trim(),
+          path: Array.isArray(buleiRaw.path) ? buleiRaw.path.map(String) : undefined,
           kind:
-            zaijiaRaw.kind === "疏" || zaijiaRaw.kind === "经"
-              ? (zaijiaRaw.kind as "经" | "疏")
+            buleiRaw.kind === "疏" || buleiRaw.kind === "经"
+              ? (buleiRaw.kind as "经" | "疏")
               : undefined,
+          source: buleiRaw.source ? String(buleiRaw.source).trim() : undefined,
         }
       : undefined;
 
@@ -81,7 +98,7 @@ export function loadSutraMeta(metaPath: string): SutraMeta {
     translator: obj.translator ? String(obj.translator) : undefined,
     dynasty: obj.dynasty ? String(obj.dynasty) : undefined,
     category: String(obj.category ?? "未分类"),
-    zaijia: zaijia?.section || zaijia?.topic || zaijia?.kind ? zaijia : undefined,
+    bulei: bulei?.section && bulei?.group ? bulei : undefined,
     juanCount: obj.juan_count != null ? Number(obj.juan_count) : undefined,
     sourceXml,
     description: obj.description ? String(obj.description) : undefined,
@@ -96,15 +113,19 @@ export function findSutraMetaFiles(corpusRoot: string): string[] {
 }
 
 function walkMetaFiles(corpusRoot: string, onMeta: (metaPath: string) => void): void {
-  const walk = (dir: string) => {
+  const sutrasRoot = resolveSutrasRoot(corpusRoot);
+  const skipReservedAtTop = path.resolve(sutrasRoot) === path.resolve(corpusRoot);
+  const walk = (dir: string, depth: number) => {
     if (!fs.existsSync(dir)) return;
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.name === "meta.yaml") onMeta(full);
+      if (entry.isDirectory()) {
+        if (depth === 0 && skipReservedAtTop && isReservedCorpusTopDir(entry.name)) continue;
+        walk(full, depth + 1);
+      } else if (entry.name === "meta.yaml") onMeta(full);
     }
   };
-  walk(corpusRoot);
+  walk(sutrasRoot, 0);
 }
 
 const META_CBETA_ID_RE = /^(?:cbeta_id|cbetaId):\s*(\S+)/m;
@@ -159,12 +180,13 @@ let corpusDirIndexCache: { root: string; index: CorpusDirIndex } | null = null;
 export function buildCorpusDirIndex(corpusRoot: string): CorpusDirIndex {
   const relByCbetaId = new Map<string, string>();
   const cbetaIdByRel = new Map<string, string>();
-  if (!fs.existsSync(corpusRoot)) return { relByCbetaId, cbetaIdByRel };
+  const sutrasRoot = resolveSutrasRoot(corpusRoot);
+  if (!fs.existsSync(sutrasRoot)) return { relByCbetaId, cbetaIdByRel };
 
   walkMetaFiles(corpusRoot, (metaPath) => {
     const cbetaId = readCbetaIdFromMetaFile(metaPath);
     if (!cbetaId) return;
-    const rel = path.relative(corpusRoot, path.dirname(metaPath)).replace(/\\/g, "/");
+    const rel = path.relative(sutrasRoot, path.dirname(metaPath)).replace(/\\/g, "/");
     relByCbetaId.set(cbetaId, rel);
     cbetaIdByRel.set(rel, cbetaId);
   });
@@ -225,7 +247,7 @@ export {
   shouldEnrichZwTitle,
   stripZwVolumeTitleSuffix,
 } from "./zw-title";
-export type { SutraMeta, SutraZaijiaMeta } from "./types";
+export type { SutraMeta } from "./types";
 
 export function sutraRootFromMetaPath(metaPath: string): string {
   return path.dirname(metaPath);

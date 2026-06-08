@@ -1,8 +1,8 @@
 /**
  * 种子：今日经句
- * @author jingxin
+ * @author 代长亚
  */
-import { getSqlite, closeDb } from "@/lib/db";
+import { getSqlite, closeDb } from "@/lib/db/sqlite";
 
 const db = getSqlite();
 const date = process.env.VERSE_DATE ?? new Date().toISOString().slice(0, 10);

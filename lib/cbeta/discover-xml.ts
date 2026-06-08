@@ -1,6 +1,6 @@
 /**
  * 扫描 CBETA xml-p5 目录下的经文 XML
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

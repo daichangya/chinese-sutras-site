@@ -1,12 +1,27 @@
 /**
  * 专题页：导读式布局（大藏经AI风格）
- * @author jingxin
+ * @author 代长亚
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { BookOpen } from "lucide-react";
 import { getSqlite } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const db = getSqlite();
+  const topic = db
+    .prepare(`SELECT title, description FROM topic WHERE slug = ?`)
+    .get(slug) as { title: string; description: string } | undefined;
+  if (!topic) return { title: "专题 | 静心" };
+  return {
+    title: `${topic.title}专题 | 静心`,
+    description: topic.description,
+  };
+}
 
 export default async function TopicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -50,10 +65,10 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
       </nav>
 
       {/* Hero — 无尽藏式专题首屏 */}
-      <header className="jx-topic-hero share-card rounded-2xl border border-amber-200/50 px-8 py-12 dark:border-amber-900/40">
-        <p className="jx-section-label text-amber-800/80 dark:text-amber-400/80 mb-3">专题阅读</p>
-        <h1 className="text-3xl md:text-4xl font-normal tracking-tight">{topic.title}</h1>
-        <p className="mt-3 text-[var(--muted)] leading-relaxed max-w-lg">{topic.description}</p>
+      <header className="jx-topic-hero share-card rounded-2xl border border-[var(--jx-border)]/50 px-5 py-8 md:px-8 md:py-12 dark:border-[var(--jx-border)]/40">
+        <p className="jx-section-label text-[var(--jx-accent-cinnabar)]/80 dark:text-[var(--jx-gold)]/80 mb-3">专题阅读</p>
+        <h1 className="text-2xl md:text-4xl font-normal tracking-tight">{topic.title}</h1>
+        <p className="mt-2 md:mt-3 text-sm text-[var(--muted)] leading-relaxed max-w-lg">{topic.description}</p>
         {items.length > 0 && (
           <p className="mt-4 text-xs text-[var(--jx-muted-label)]">
             {items.length} 部经 · 阅读路径
@@ -82,14 +97,14 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
       <section className="mt-12">
         <div className="flex items-center gap-3 mb-6">
           <p className="jx-section-label">推荐经目</p>
-          <div className="h-px flex-1 bg-gradient-to-r from-[var(--jx-border)] to-transparent" />
+          <div className="h-px flex-1 bg-gradient-to-r from-[var(--jx-border)]/40 to-transparent" />
         </div>
         <ol data-testid="topic-sutra-list" className="space-y-3">
           {items.length === 0 && (
-            <li className="text-center py-12">
-              <p className="text-4xl mb-4 opacity-30">📖</p>
-              <p className="text-[var(--muted)] text-lg">暂无推荐经目</p>
-              <p className="text-sm text-[var(--jx-muted-label)] mt-1">后续会陆续补充，敬请期待。</p>
+            <li className="flex flex-col items-center py-12 text-center jx-ui-shell">
+              <BookOpen className="mb-4 size-10 text-[var(--jx-muted-label)]" aria-hidden="true" />
+              <p className="text-lg text-[var(--muted)]">暂无推荐经目</p>
+              <p className="mt-1 text-sm text-[var(--jx-muted-label)]">后续会陆续补充，敬请期待。</p>
             </li>
           )}
           {items.map((item, idx) => (
@@ -100,14 +115,14 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
                     {String(idx + 1).padStart(2, "0")}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-medium group-hover:text-amber-900 dark:group-hover:text-amber-400 transition-colors">
+                    <h3 className="text-base font-medium group-hover:text-[var(--jx-accent-cinnabar)] dark:group-hover:text-[var(--jx-gold)] transition-colors">
                       {item.title}
                     </h3>
                     <p className="mt-0.5 text-sm text-[var(--muted)]">
                       {[item.translator, item.category].filter(Boolean).join(" · ")}
                     </p>
                     {item.quote && (
-                      <p className="mt-2 text-sm italic leading-relaxed text-stone-600 dark:text-stone-400 border-l-2 border-amber-500/60 pl-3">
+                      <p className="mt-2 text-sm italic leading-relaxed text-stone-600 dark:text-stone-400 border-l-2 border-[var(--jx-gold)]/60 pl-3">
                         {item.quote}
                       </p>
                     )}

@@ -1,6 +1,6 @@
 /**
  * 知识图谱描述提及扫描（UI 层软关联）
- * @author jingxin
+ * @author 代长亚
  */
 import "server-only";
 

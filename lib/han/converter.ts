@@ -1,11 +1,12 @@
 /**
  * OpenCC 繁简转换（opencc-js + 可选系统 CLI）
- * @author jingxin
+ * @author 代长亚
  */
 import OpenCC from "opencc-js";
 import { Trie } from "opencc-js/core";
-import { convertViaCli, isCliAvailable } from "./cli-backend";
-import { getCbetaExtraS2t, getCbetaExtraT2s } from "./dict";
+import { convertViaCli, isCliAvailable, isCliDictSupported } from "./cli-backend";
+import { getCbetaExtraJsonPath, getCbetaExtraS2t, getCbetaExtraT2s } from "./dict";
+import fs from "fs";
 import { normalizeForConversion } from "./normalize";
 import type { ConvertBackend, ConvertOptions, ConvertResult, ScriptDetect } from "./types";
 
@@ -87,7 +88,12 @@ function resolveBackend(backend: ConvertBackend | undefined, direction: "t2s" | 
     }
     return "cli";
   }
-  return isCliAvailable() ? "cli" : "js";
+  if (!isCliAvailable()) return "js";
+  // 语料 t2s 依赖 CBETA 扩展词；无 -d 的 CLI 不如 opencc-js
+  if (direction === "t2s" && fs.existsSync(getCbetaExtraJsonPath()) && !isCliDictSupported()) {
+    return "js";
+  }
+  return "cli";
 }
 
 function assertLength(text: string): void {
@@ -107,8 +113,15 @@ function convertInternal(
   const backend = resolveBackend(opts.backend, direction);
 
   let converted: string;
+  let usedBackend = backend;
   if (backend === "cli") {
-    converted = convertViaCli(input, direction);
+    try {
+      converted = convertViaCli(input, direction);
+    } catch {
+      usedBackend = "js";
+      converted =
+        direction === "t2s" ? getT2sJsConverter()(input) : getS2tJsConverter()(input);
+    }
   } else if (direction === "t2s") {
     converted = getT2sJsConverter()(input);
   } else {
@@ -119,7 +132,7 @@ function convertInternal(
     text: converted,
     original,
     detected: detectScript(original),
-    backend,
+    backend: usedBackend,
   };
 }
 

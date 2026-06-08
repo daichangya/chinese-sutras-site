@@ -1,6 +1,6 @@
 /**
  * 拼音结果 SQLite 缓存
- * @author jingxin
+ * @author 代长亚
  */
 import { getSqlite } from "@/lib/db";
 import type { CharReading, PinyinScript } from "./types";

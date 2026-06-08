@@ -1,6 +1,6 @@
 /**
  * 拼音模块类型
- * @author jingxin
+ * @author 代长亚
  */
 
 export type ReadingSource = "kx" | "manual" | "algo" | "sidecar";

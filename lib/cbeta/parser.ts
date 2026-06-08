@@ -1,6 +1,6 @@
 /**
  * CBETA TEI P5 解析（段落级）
- * @author jingxin
+ * @author 代长亚
  */
 import { XMLParser } from "fast-xml-parser";
 import { filterPrefaceParagraphs } from "./preface-filter";

@@ -1,6 +1,6 @@
 /**
  * 单文件 / stdin 拼音转换 CLI
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

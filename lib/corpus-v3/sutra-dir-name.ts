@@ -1,6 +1,6 @@
 /**
  * 经目目录名：书名_作者_N卷 + 可选消歧段；cbetaId 仅最后兜底
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
@@ -11,6 +11,7 @@ import {
 } from "./dir-disambiguator";
 import type { CorpusDirIndex } from "./meta";
 import { findSutraDirForCbetaId, getCorpusDirIndex, readCbetaIdFromMetaFile } from "./meta";
+import { joinSutraPath } from "./paths";
 
 const INVALID_DIR_CHARS = /[/\\:*?"<>|]/g;
 const LEGACY_CBETA_SUFFIX = /_([A-Za-z]+\d+n\d+[A-Za-z]?)$/;
@@ -181,7 +182,7 @@ export function preferredSutraDirName(
 }
 
 function dirExists(corpusRoot: string, dept: string, dirName: string): boolean {
-  return fs.existsSync(path.join(corpusRoot, dept, dirName));
+  return fs.existsSync(joinSutraPath(corpusRoot, dept, dirName));
 }
 
 function cbetaIdAtDir(
@@ -192,7 +193,7 @@ function cbetaIdAtDir(
 ): string | null {
   const rel = `${dept}/${dirName}`.replace(/\\/g, "/");
   if (index) return index.cbetaIdByRel.get(rel) ?? null;
-  return readCbetaIdFromMetaFile(path.join(corpusRoot, dept, dirName, "meta.yaml"));
+  return readCbetaIdFromMetaFile(joinSutraPath(corpusRoot, dept, dirName, "meta.yaml"));
 }
 
 function pickDirName(

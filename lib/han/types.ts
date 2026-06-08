@@ -1,6 +1,6 @@
 /**
  * 繁简转换类型
- * @author jingxin
+ * @author 代长亚
  */
 
 export type ConvertBackend = "auto" | "js" | "cli";

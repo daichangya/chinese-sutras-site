@@ -1,6 +1,6 @@
 /**
  * Corpus V3 可读 Markdown 序列化
- * @author jingxin
+ * @author 代长亚
  */
 import type { StructureBlock, StructureJuan } from "@/lib/cbeta/structure";
 import type { SutraMeta } from "./types";

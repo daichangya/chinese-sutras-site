@@ -1,6 +1,6 @@
 /**
  * 知识图谱推荐探索入口
- * @author jingxin
+ * @author 代长亚
  */
 "use client";
 

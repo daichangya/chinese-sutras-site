@@ -1,6 +1,6 @@
 /**
  * MVP 导入经目
- * @author jingxin
+ * @author 代长亚
  */
 export type CanonEntry = {
   slug: string;
@@ -27,7 +27,7 @@ const MVP_SLUGS = new Set(MVP_CANON.map((e) => e.slug));
 const MVP_CBETA_BY_SLUG = new Map(MVP_CANON.map((e) => [e.slug, e.cbetaId]));
 const MVP_SLUG_BY_CBETA = new Map(MVP_CANON.map((e) => [e.cbetaId.toUpperCase(), e.slug]));
 
-/** MVP 经典是否支持抄经 */
+/** 是否在 MVP 热门经目列表中（用于首页推荐与友好 slug 映射） */
 export function isMvpSutra(slug: string): boolean {
   return MVP_SLUGS.has(slug);
 }

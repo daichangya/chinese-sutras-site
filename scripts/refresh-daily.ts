@@ -1,11 +1,11 @@
 /**
  * 刷新今日经句与 AI 解读（运维脚本）
- * @author jingxin
+ * @author 代长亚
  */
 import { execSync } from "child_process";
 import { chatCompletion } from "@/lib/ai/gateway";
 import { buildDailySummaryPrompt } from "@/lib/ai/prompts";
-import { getSqlite, closeDb } from "@/lib/db";
+import { getSqlite, closeDb } from "@/lib/db/sqlite";
 
 execSync("npm run seed:daily", { stdio: "inherit", cwd: process.cwd() });
 

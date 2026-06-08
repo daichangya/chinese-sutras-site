@@ -1,6 +1,6 @@
 /**
  * 从 CBETA XML / 语料原文补全 meta
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

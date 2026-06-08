@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { CopybookShell } from "@/components/copybook/copybook-shell";
-import { isMvpSutra } from "@/lib/cbeta/mvp-canon";
+import { CopybookClient } from "@/components/copybook/copybook-client";
 import { getSqlite } from "@/lib/db";
 import {
   countParagraphsForSutra,
@@ -9,13 +8,13 @@ import {
   listChapterSeqsForSutra,
 } from "@/lib/sutra/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 const PARAGRAPH_PAGE_LIMIT = 300;
 
 /**
  * 抄经字帖页
- * @author jingxin
+ * @author 代长亚
  */
 export default async function CopybookPage({
   params,
@@ -26,8 +25,6 @@ export default async function CopybookPage({
 }) {
   getSqlite();
   const { slug } = await params;
-  if (!isMvpSutra(slug)) notFound();
-
   const sutra = getSutraBySlug(slug);
   if (!sutra) notFound();
 
@@ -49,7 +46,7 @@ export default async function CopybookPage({
     : getParagraphsForSutra(sutra.id);
 
   return (
-    <CopybookShell
+    <CopybookClient
       sutra={sutra}
       paragraphs={paragraphs}
       chapters={needsPaging ? chapters : []}

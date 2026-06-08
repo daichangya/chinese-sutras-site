@@ -1,6 +1,6 @@
 /**
  * 从 cbeta/cc 词库 + cbeta-manual.json 生成 OpenCC 扩展词典
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
@@ -62,7 +62,7 @@ function writeExtraTs(t2s: DictPair[], s2t: DictPair[]): void {
     pairs.map(([a, b]) => `  [${JSON.stringify(a)}, ${JSON.stringify(b)}]`).join(",\n");
   const content = `/**
  * CBETA 扩展词库（由 scripts/build-opencc-dict.ts 生成，勿手改）
- * @author jingxin
+ * @author 代长亚
  */
 export const CBETA_EXTRA_T2S: [string, string][] = [
 ${fmt(t2s)}

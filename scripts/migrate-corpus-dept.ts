@@ -1,9 +1,10 @@
 /**
  * 将 corpus 迁到统一部类目录（见 lib/cbeta/corpus-category.ts）
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
+import { resolveBuleiMeta } from "@/lib/cbeta/bulei-catalog";
 import { canonDeptFromCbetaId, categoryFromCorpusDir, corpusDirName } from "@/lib/cbeta/corpus-category";
 import {
   buildCorpusDirIndex,
@@ -12,8 +13,8 @@ import {
   loadSutraMeta,
   migrateSutraDirName,
   readCbetaIdFromMetaFile,
+  buleiFieldsForCbetaId,
   writeSutraMeta,
-  zaijiaFieldsForCbetaId,
 } from "@/lib/corpus-v3/meta";
 import { enrichMetaFromXml } from "@/lib/corpus-v3/meta-from-xml";
 import {
@@ -23,7 +24,34 @@ import {
   resolveZwCollisionTitle,
 } from "@/lib/corpus-v3/zw-title";
 
+import { joinSutraPath, isReservedCorpusTopDir, resolveSutrasRoot } from "@/lib/corpus-v3/paths";
 import { resolveCorpusRoot } from "@/lib/corpus-v3/root-path";
+import { toSimplifiedLabel } from "@/lib/corpus-v3/sutra-labels";
+import type { SutraMeta } from "@/lib/corpus-v3/types";
+
+function metaWithSimplifiedLabels(meta: SutraMeta): SutraMeta {
+  return {
+    ...meta,
+    title: toSimplifiedLabel(meta.title) ?? meta.title,
+    translator: meta.translator
+      ? (toSimplifiedLabel(meta.translator) ?? meta.translator)
+      : meta.translator,
+    dynasty: meta.dynasty ? (toSimplifiedLabel(meta.dynasty) ?? meta.dynasty) : meta.dynasty,
+    dirLabel: meta.dirLabel ? (toSimplifiedLabel(meta.dirLabel) ?? meta.dirLabel) : meta.dirLabel,
+  };
+}
+
+function buleiMetaChanged(a: SutraMeta["bulei"], b: SutraMeta["bulei"]): boolean {
+  if (!b) return false;
+  if (!a) return true;
+  return (
+    a.section !== b.section ||
+    a.group !== b.group ||
+    a.section_code !== b.section_code ||
+    a.kind !== b.kind ||
+    JSON.stringify(a.path ?? []) !== JSON.stringify(b.path ?? [])
+  );
+}
 
 const DEFAULT_XML_ROOT = path.join(process.cwd(), "vendor/xml-p5");
 const xmlRoot = process.env.CBETA_XML_ROOT ?? DEFAULT_XML_ROOT;
@@ -41,6 +69,8 @@ function argValue(flag: string): string | undefined {
 const onlyFilter = argValue("--only");
 /** 仅处理当前顶层部类目录名，如 --dept 般若 或 --dept 新编（可写简称） */
 const deptFilter = argValue("--dept");
+/** hybrid：在部类下插入 bulei 分组目录 corpus/{部类}/{bulei组}/{经}/ */
+const layoutBulei = process.argv.includes("--layout") && process.argv.includes("bulei");
 
 function matchesDeptFilter(filter: string, currentTopDir: string, targetDeptDir: string): boolean {
   if (currentTopDir === filter || targetDeptDir === filter) return true;
@@ -59,10 +89,11 @@ const titleCollisionIndex = buildTitleCollisionIndex(corpusRoot);
 console.log(`Index: ${dirIndex.relByCbetaId.size} sutras (${Date.now() - t0}ms)`);
 
 function collectMetaPaths(): string[] {
+  const sutrasRoot = resolveSutrasRoot(corpusRoot);
   if (onlyFilter) {
-    const abs = path.join(corpusRoot, onlyFilter.split("/")[0] ?? onlyFilter);
-    if (onlyFilter.includes("/") && fs.existsSync(path.join(corpusRoot, onlyFilter, "meta.yaml"))) {
-      return [path.join(corpusRoot, onlyFilter, "meta.yaml")];
+    const abs = path.join(sutrasRoot, onlyFilter.split("/")[0] ?? onlyFilter);
+    if (onlyFilter.includes("/") && fs.existsSync(path.join(sutrasRoot, onlyFilter, "meta.yaml"))) {
+      return [path.join(sutrasRoot, onlyFilter, "meta.yaml")];
     }
     if (!fs.existsSync(abs)) return findSutraMetaFiles(corpusRoot);
     const out: string[] = [];
@@ -71,7 +102,7 @@ function collectMetaPaths(): string[] {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) walk(full);
         else if (entry.name === "meta.yaml") {
-          const rel = path.relative(corpusRoot, path.dirname(full)).replace(/\\/g, "/");
+          const rel = path.relative(sutrasRoot, path.dirname(full)).replace(/\\/g, "/");
           if (rel.includes(onlyFilter)) out.push(full);
         }
       }
@@ -80,13 +111,13 @@ function collectMetaPaths(): string[] {
     return out.sort();
   }
   if (deptFilter) {
-    let deptRoot = path.join(corpusRoot, deptFilter);
+    let deptRoot = joinSutraPath(corpusRoot, deptFilter);
     if (!fs.existsSync(deptRoot)) {
       const alt = fs
-        .readdirSync(corpusRoot, { withFileTypes: true })
+        .readdirSync(sutrasRoot, { withFileTypes: true })
         .find((e) => e.isDirectory() && e.name.startsWith(deptFilter));
       if (!alt) return [];
-      deptRoot = path.join(corpusRoot, alt.name);
+      deptRoot = path.join(sutrasRoot, alt.name);
     }
     const out: string[] = [];
     const walk = (dir: string) => {
@@ -137,10 +168,17 @@ for (const metaPath of collectMetaPaths()) {
   } catch {
     continue;
   }
+  const beforeSimplify = meta;
+  meta = metaWithSimplifiedLabels(meta);
+  const needsSimplifiedLabels =
+    meta.title !== beforeSimplify.title ||
+    meta.translator !== beforeSimplify.translator ||
+    meta.dynasty !== beforeSimplify.dynasty ||
+    meta.dirLabel !== beforeSimplify.dirLabel;
   const category = canonDeptFromCbetaId(meta.cbetaId, meta.title);
   const deptDir = corpusDirName(category);
 
-  const currentRel = path.relative(corpusRoot, sutraDir).replace(/\\/g, "/");
+  const currentRel = path.relative(resolveSutrasRoot(corpusRoot), sutraDir).replace(/\\/g, "/");
   const currentDeptLabel = currentRel.split("/")[0] ?? "";
 
   if (deptFilter && !matchesDeptFilter(deptFilter, currentDeptLabel, deptDir)) {
@@ -162,19 +200,21 @@ for (const metaPath of collectMetaPaths()) {
     meta.dynasty,
     meta.dirLabel,
   );
-  const destDir = path.join(corpusRoot, deptDir, titleDir);
-  const destRel = path.join(deptDir, titleDir).replace(/\\/g, "/");
+  const buleiGroup = layoutBulei ? resolveBuleiMeta(meta.cbetaId)?.groupDir : undefined;
+  const destDir = buleiGroup
+    ? joinSutraPath(corpusRoot, deptDir, buleiGroup, titleDir)
+    : joinSutraPath(corpusRoot, deptDir, titleDir);
+  const destRel = (buleiGroup ? path.join(deptDir, buleiGroup, titleDir) : path.join(deptDir, titleDir)).replace(
+    /\\/g,
+    "/",
+  );
 
   const needsMove = path.resolve(destDir) !== path.resolve(sutraDir);
-  const needsMeta = meta.category !== category || metaBackfilled;
-  const zaijia = zaijiaFieldsForCbetaId(meta.cbetaId);
-  const needsZaijia =
-    !!zaijia &&
-    (meta.zaijia?.section !== zaijia.section ||
-      meta.zaijia?.topic !== zaijia.topic ||
-      meta.zaijia?.kind !== zaijia.kind);
+  const needsMeta = meta.category !== category || metaBackfilled || needsSimplifiedLabels;
+  const bulei = buleiFieldsForCbetaId(meta.cbetaId);
+  const needsBulei = buleiMetaChanged(meta.bulei, bulei);
 
-  if (!needsMove && !needsMeta && !needsZaijia) {
+  if (!needsMove && !needsMeta && !needsBulei) {
     skipped += 1;
     continue;
   }
@@ -203,7 +243,10 @@ for (const metaPath of collectMetaPaths()) {
     }
     console.log(`${dryRun ? "[dry-run] " : ""}${currentRel} -> ${destRel}`);
     if (!dryRun) {
-      fs.mkdirSync(path.join(corpusRoot, deptDir), { recursive: true });
+      fs.mkdirSync(
+        buleiGroup ? joinSutraPath(corpusRoot, deptDir, buleiGroup) : joinSutraPath(corpusRoot, deptDir),
+        { recursive: true },
+      );
       if (!fs.existsSync(sutraDir)) {
         skipped += 1;
         continue;
@@ -228,14 +271,14 @@ for (const metaPath of collectMetaPaths()) {
     console.log(`${dryRun ? "[dry-run] " : ""}meta ${currentRel} category -> ${category}`);
   }
 
-  if (!dryRun && (needsMove || needsMeta || needsZaijia)) {
+  if (!dryRun && (needsMove || needsMeta || needsBulei)) {
     const targetDir = needsMove ? destDir : sutraDir;
-    writeSutraMeta(path.join(targetDir, "meta.yaml"), { ...meta, category, zaijia });
+    writeSutraMeta(path.join(targetDir, "meta.yaml"), { ...meta, category, bulei });
     if (meta.title !== oldTitle) {
       refreshAuxMdTitles(targetDir, oldTitle, meta.title);
     }
     updated += 1;
-  } else if (needsMeta || needsZaijia) {
+  } else if (needsMeta || needsBulei) {
     updated += 1;
   }
 }
@@ -253,10 +296,14 @@ if (!dryRun) {
       /* ignore */
     }
   };
-  for (const entry of fs.readdirSync(corpusRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
-    if (entry.name === "README.md") continue;
-    removeEmpty(path.join(corpusRoot, entry.name));
+  const pruneRoots = [resolveSutrasRoot(corpusRoot)];
+  if (pruneRoots[0] !== path.resolve(corpusRoot)) pruneRoots.push(corpusRoot);
+  for (const root of pruneRoots) {
+    for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+      if (root === path.resolve(corpusRoot) && isReservedCorpusTopDir(entry.name)) continue;
+      removeEmpty(path.join(root, entry.name));
+    }
   }
 }
 

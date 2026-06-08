@@ -1,6 +1,6 @@
 /**
  * 知识图谱实体详情卡片
- * @author jingxin
+ * @author 代长亚
  */
 "use client";
 
@@ -13,7 +13,7 @@ import {
   SOURCE_TIER_LABELS,
 } from "@/lib/kg/labels";
 import { personDisplayDates, personDynasty, personSchool } from "@/lib/kg/display";
-import { personPath } from "@/lib/kg/slug";
+import { entityDetailPath, personPath } from "@/lib/kg/slug";
 
 export type KgEntityDetail = {
   id: string;
@@ -37,14 +37,9 @@ export type KgEntityDetail = {
 
 function relationLink(r: KgEntityDetail["relations"][0]) {
   if (r.otherType === "person") return personPath(r.otherSlug);
-  if (r.otherType === "text") {
-    if (r.otherSutraSlug) return `/sutra/${r.otherSutraSlug}`;
-    return `/search?q=${encodeURIComponent(r.otherName)}`;
-  }
-  if (r.otherType === "place" || r.otherType === "monastery") {
-    return `/places?focus=${encodeURIComponent(r.otherSlug)}`;
-  }
-  return `/kg?slug=${encodeURIComponent(r.otherSlug)}`;
+  return entityDetailPath(r.otherId, r.otherType, {
+    sutraSlug: r.otherSutraSlug ?? null,
+  });
 }
 
 export function KgEntityCard({ entity, loading }: { entity: KgEntityDetail | null; loading?: boolean }) {

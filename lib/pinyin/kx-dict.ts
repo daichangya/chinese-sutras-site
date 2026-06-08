@@ -1,6 +1,6 @@
 /**
  * 康熙字典单字拼音（构建产物类型）
- * @author jingxin
+ * @author 代长亚
  */
 
 export type KxCharEntry = {

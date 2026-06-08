@@ -2,7 +2,7 @@
 
 /**
  * 抄经多字体按需加载
- * @author jingxin
+ * @author 代长亚
  */
 import { useEffect, useState } from "react";
 
@@ -65,7 +65,8 @@ export function useCopybookFont(choice: CopybookFontChoice = "xuandong"): {
     setReady(false);
     setFailed(false);
     loadFont(choice).then((ok) => {
-      setReady(ok);
+      // 字体加载失败也允许生成（缺失字走占位符 / Noto 回退）
+      setReady(true);
       setFailed(!ok);
     });
   }, [choice]);

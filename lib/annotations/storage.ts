@@ -1,6 +1,6 @@
 /**
  * 阅读笔记（localStorage）
- * @author jingxin
+ * @author 代长亚
  */
 export type AnnotationEntry = {
   id: string;

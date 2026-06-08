@@ -1,6 +1,6 @@
 /**
  * 佛经专名词组拼音（由 scripts/build-pinyin-dict.ts 生成，勿手改）
- * @author jingxin
+ * @author 代长亚
  */
 export const BUDDHIST_PHRASES: [string, string][] = [
   ["觀自在", "guān zì zài"],

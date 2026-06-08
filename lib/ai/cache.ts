@@ -1,6 +1,6 @@
 /**
  * AI 解释缓存
- * @author jingxin
+ * @author 代长亚
  */
 import { createHash } from "crypto";
 import { getSqlite } from "@/lib/db";

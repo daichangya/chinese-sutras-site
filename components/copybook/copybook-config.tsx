@@ -2,9 +2,9 @@
 
 /**
  * 抄经字帖配置面板
- * @author jingxin
+ * @author 代长亚
  */
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ParagraphRow } from "@/lib/sutra/queries";
 import {
   COPYBOOK_CHAR_LIMIT,
@@ -16,6 +16,7 @@ import {
   checkCoverage,
   coveragePercent,
 } from "@/components/copybook/char-coverage";
+import { suggestFontForTraditional } from "@/components/copybook/font-char-match";
 import {
   GRID_LABELS,
   PAPER_PRESETS,
@@ -26,8 +27,6 @@ import {
   type GridType,
   type WriteMode,
 } from "@/components/copybook/grid-renderer";
-import { COPYBOOK_CHAR_SETS } from "@/lib/copybook/char-sets";
-
 export type CopybookSettings = {
   selectedParagraphIds: Set<string>;
   gridType: GridType;
@@ -79,10 +78,10 @@ export function CopybookConfig({
 
   return (
     <div
-      className="rounded-xl border border-[var(--jx-border)] bg-white p-6 shadow-sm"
+      className="rounded-xl border border-[var(--jx-border)] bg-[var(--jx-paper-elevated)] p-4 md:p-6 shadow-sm"
       data-testid="copybook-config"
     >
-      <h2 className="mb-4 border-b border-[var(--jx-border)] pb-3 text-lg font-semibold">
+      <h2 className="mb-4 border-b border-[var(--jx-border)] pb-3 text-base md:text-lg font-semibold">
         抄经设置
       </h2>
 
@@ -91,7 +90,7 @@ export function CopybookConfig({
           <label className="text-sm font-medium text-[var(--foreground)]">选择段落</label>
           <button
             type="button"
-            className="text-xs text-amber-800 hover:underline"
+            className="text-xs text-[var(--jx-accent-cinnabar)] dark:text-[var(--jx-gold)] hover:underline"
             onClick={selectAll}
           >
             全选
@@ -116,7 +115,7 @@ export function CopybookConfig({
         <p className="mt-2 text-xs text-[var(--jx-muted-label)]">
           已选 {charCount} 字
           {truncated && (
-            <span className="text-amber-700">（超出 {COPYBOOK_CHAR_LIMIT} 字上限，已截断）</span>
+            <span className="text-[var(--jx-gold)]">（超出 {COPYBOOK_CHAR_LIMIT} 字上限，已截断）</span>
           )}
         </p>
       </section>
@@ -162,19 +161,7 @@ export function CopybookConfig({
           </select>
         </Field>
 
-        <Field label="排列方向">
-          <select
-            className="w-full rounded-lg border border-[var(--jx-border)] px-3 py-2 text-sm"
-            value={settings.direction}
-            onChange={(e) =>
-              onChange({ ...settings, direction: e.target.value as CopybookDirection })
-            }
-          >
-            <option value="vertical">竖排（传统）</option>
-            <option value="horizontal">横排</option>
-          </select>
-        </Field>
-
+        {/* 竖排：Phase 2 恢复（单页 canvas 过宽）；默认横排见 defaultCopybookSettings */}
         <Field label="纸张格式">
           <select
             className="w-full rounded-lg border border-[var(--jx-border)] px-3 py-2 text-sm"
@@ -242,50 +229,54 @@ export function CopybookConfig({
       )}
 
       {/* 覆盖率信息 */}
-      {processedText && (
-        <div className="mt-4 rounded-lg border border-[var(--jx-border)] bg-[var(--jx-paper-deep)] p-3">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-[var(--jx-muted-label)]">
-              {FONT_LABELS[settings.fontChoice]} 字库覆盖
-            </span>
-            <span
-              className={`font-medium ${
-                coveragePercent(checkCoverage(processedText, settings.fontChoice)) >= 90
-                  ? "text-green-700"
-                  : "text-amber-700"
-              }`}
-            >
-              {coveragePercent(checkCoverage(processedText, settings.fontChoice))}%
-            </span>
+      {processedText && (() => {
+        const cov = checkCoverage(processedText, settings.fontChoice);
+        const pct = coveragePercent(cov);
+        const fontHint = suggestFontForTraditional(processedText, settings.fontChoice);
+        return (
+          <div className="mt-4 rounded-lg border border-[var(--jx-border)] bg-[var(--jx-paper-deep)] p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[var(--jx-muted-label)]">
+                {FONT_LABELS[settings.fontChoice]} 字库字形覆盖
+              </span>
+              <span
+                className={`font-medium ${
+                  pct >= 90 ? "text-green-700 dark:text-green-400" : "text-[var(--jx-gold)] dark:text-[var(--jx-gold)]"
+                }`}
+              >
+                {pct}%
+              </span>
+            </div>
+            <div className="mt-1 h-1.5 w-full rounded-full bg-[var(--jx-border)]">
+              <div
+                className={`h-1.5 rounded-full transition-all ${
+                  pct >= 90 ? "bg-green-600 dark:bg-green-500" : "bg-[var(--jx-gold)] dark:bg-[rgb(139_37_0/0.06)]0"
+                }`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-[var(--jx-muted-label)]">
+              字库来自碑帖提取；已按简繁对应匹配。未满 100% 多为生僻字，预览会用 Noto 回退显示。
+            </p>
+            {settings.showTraditional && fontHint && (
+              <p className="mt-1 text-xs text-[var(--jx-accent-cinnabar)] dark:text-[var(--jx-gold)]">
+                繁体模式下可尝试切换为 {FONT_LABELS[fontHint]}，覆盖率通常更高。
+              </p>
+            )}
+            {cov.missing.length > 0 && cov.missing.length <= 30 && (
+              <p className="mt-2 text-xs text-[var(--jx-muted-label)]">
+                字库无字形 {cov.missing.length} 字：
+                <span className="font-mono">{cov.missing.join(" ")}</span>
+              </p>
+            )}
+            {cov.missing.length > 30 && (
+              <p className="mt-2 text-xs text-[var(--jx-muted-label)]">
+                字库无字形 {cov.missing.length} 字（超出显示上限）
+              </p>
+            )}
           </div>
-          {(() => {
-            const cov = checkCoverage(processedText, settings.fontChoice);
-            return (
-              <>
-                <div className="mt-1 h-1.5 w-full rounded-full bg-[var(--jx-border)]">
-                  <div
-                    className={`h-1.5 rounded-full transition-all ${
-                      coveragePercent(cov) >= 90 ? "bg-green-600" : "bg-amber-600"
-                    }`}
-                    style={{ width: `${coveragePercent(cov)}%` }}
-                  />
-                </div>
-                {cov.missing.length > 0 && cov.missing.length <= 30 && (
-                  <p className="mt-2 text-xs text-[var(--jx-muted-label)]">
-                    缺失 {cov.missing.length} 字：
-                    <span className="font-mono">{cov.missing.join(" ")}</span>
-                  </p>
-                )}
-                {cov.missing.length > 30 && (
-                  <p className="mt-2 text-xs text-[var(--jx-muted-label)]">
-                    缺失 {cov.missing.length} 字（超出显示上限）
-                  </p>
-                )}
-              </>
-            );
-          })()}
-        </div>
-      )}
+        );
+      })()}
 
       <p className="mt-4 text-xs text-[var(--jx-muted-label)]">
         经名：{sutraTitle} · 预览正文 {processedText.length} 字
@@ -297,7 +288,9 @@ export function CopybookConfig({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <span className="mb-1 block text-xs font-medium text-[var(--jx-muted-label)]">{label}</span>
+      <label className="mb-1 block text-xs font-medium text-[var(--jx-muted-label)]">
+        {label}
+      </label>
       {children}
     </div>
   );
@@ -320,12 +313,6 @@ export function buildRenderConfig(
   const cellSize =
     settings.paperPresetId === "custom" ? settings.customCellSize : preset.cellSize;
 
-  // 计算缺失字符
-  const charSet = COPYBOOK_CHAR_SETS[settings.fontChoice];
-  const missingChars = charSet
-    ? [...finalText].filter((c) => c.trim() && !charSet.has(c))
-    : [...finalText].filter((c) => c.trim());
-
   return {
     text: finalText,
     title: sutraTitle,
@@ -337,7 +324,6 @@ export function buildRenderConfig(
     mode: settings.mode,
     direction: settings.direction,
     fontChoice: settings.fontChoice,
-    missingChars,
   };
 }
 
@@ -357,8 +343,8 @@ export function defaultCopybookSettings(paragraphs: ParagraphRow[]): CopybookSet
   return {
     selectedParagraphIds: new Set(paragraphs.map((p) => p.id)),
     gridType: "mi",
-    mode: "normal",
-    direction: "vertical",
+    mode: "miaohong",
+    direction: "horizontal",
     fontChoice: "xuandong",
     paperPresetId: "8x10",
     customCols: 8,

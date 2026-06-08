@@ -1,6 +1,6 @@
 /**
  * 白话分层配置（五期单一真相源）
- * @author jingxin
+ * @author 代长亚
  */
 export type ColloquialTier = "core" | "intro" | "long";
 

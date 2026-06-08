@@ -1,17 +1,41 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
-import { ReaderShell } from "@/components/reader/reader-shell";
+import type { Metadata } from "next";
+import { SutraReaderClient } from "@/components/reader/reader-client";
 import { getSqlite } from "@/lib/db";
 import {
   countParagraphsForSutra,
   getParagraphsForSutra,
   getRelatedSutras,
   getSutraBySlug,
+  isCorpusMounted,
   listChapterSeqsForSutra,
 } from "@/lib/sutra/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
+
+const cachedGetSutraBySlug = cache(getSutraBySlug);
 
 const PARAGRAPH_PAGE_LIMIT = 300;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  getSqlite();
+  const { slug } = await params;
+  const sutra = cachedGetSutraBySlug(slug);
+  if (!sutra) return { title: "经文 | 静心" };
+  return {
+    title: `${sutra.title} | 静心`,
+    description: `${sutra.title}${sutra.translator ? ` — ${sutra.translator}` : ""}。现代化阅读，白话与 AI 辅助理解。`,
+    openGraph: {
+      title: sutra.title,
+      description: sutra.translator ?? "静心佛经阅读",
+    },
+  };
+}
 
 export default async function SutraPage({
   params,
@@ -22,7 +46,7 @@ export default async function SutraPage({
 }) {
   getSqlite();
   const { slug } = await params;
-  const sutra = getSutraBySlug(slug);
+  const sutra = cachedGetSutraBySlug(slug);
   if (!sutra) notFound();
 
   const chapters = listChapterSeqsForSutra(sutra.id);
@@ -43,14 +67,22 @@ export default async function SutraPage({
     : getParagraphsForSutra(sutra.id);
 
   const related = getRelatedSutras(sutra.id);
+  const corpusMissing = !isCorpusMounted();
 
   return (
-    <ReaderShell
-      sutra={sutra}
-      paragraphs={paragraphs}
-      related={related}
-      chapters={needsPaging ? chapters : []}
-      currentChapter={chapterSeq}
-    />
+    <>
+      {corpusMissing && (
+        <p className="mx-auto max-w-3xl px-4 py-3 text-sm text-[var(--jx-accent-cinnabar)] bg-[rgb(139_37_0/0.06)] border border-[var(--jx-border)] rounded-md">
+          语料目录未挂载（请设置 CORPUS_DIR）。段落正文无法从 chinese-sutras-md 加载。
+        </p>
+      )}
+      <SutraReaderClient
+        sutra={sutra}
+        paragraphs={paragraphs}
+        related={related}
+        chapters={needsPaging ? chapters : []}
+        currentChapter={chapterSeq}
+      />
+    </>
   );
 }

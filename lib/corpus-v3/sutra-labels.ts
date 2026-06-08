@@ -1,6 +1,6 @@
 /**
  * 经目目录/meta 用简体标签（原文/ 仍保留 XML 繁体）
- * @author jingxin
+ * @author 代长亚
  */
 import { t2s } from "@/lib/han";
 

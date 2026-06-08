@@ -1,6 +1,6 @@
 /**
  * 知识图谱描述提及 API
- * @author jingxin
+ * @author 代长亚
  */
 import { NextResponse } from "next/server";
 import { getSqlite } from "@/lib/db";

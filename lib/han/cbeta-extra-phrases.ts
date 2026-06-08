@@ -1,6 +1,6 @@
 /**
  * CBETA 扩展词库（由 scripts/build-opencc-dict.ts 生成，勿手改）
- * @author jingxin
+ * @author 代长亚
  */
 export const CBETA_EXTRA_T2S: [string, string][] = [
   ["一目瞭然", "一目了然"],

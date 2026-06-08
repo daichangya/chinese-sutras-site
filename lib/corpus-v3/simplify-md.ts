@@ -1,6 +1,6 @@
 /**
  * corpus:simplify 涉及的 MD 路径收集
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

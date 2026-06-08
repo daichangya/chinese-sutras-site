@@ -1,6 +1,6 @@
 /**
  * 无结构化关系时的描述提及面板
- * @author jingxin
+ * @author 代长亚
  */
 "use client";
 

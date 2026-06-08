@@ -1,6 +1,6 @@
 /**
  * 解析 CBETA XML 文件路径
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

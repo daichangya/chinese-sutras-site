@@ -1,7 +1,7 @@
 /**
  * CBETA 藏系列显示名（与 CBETA 典籍代码表对齐）
  * @see https://www.cbeta.org/cbreader/help/id.htm
- * @author jingxin
+ * @author 代长亚
  */
 
 /** 藏代码 → 语料顶层目录名（较长代码须写在短代码之前，由 seriesCodeFromCbetaId 最长匹配） */

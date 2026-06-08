@@ -1,7 +1,7 @@
 /**
  * 从 Markdown 语料导入 SQLite（Corpus V3）
  * text 字段存简体，繁/拼音实时生成
- * @author jingxin
+ * @author 代长亚
  */
 import { execSync } from "child_process";
 import { sutraIdFromCbetaId } from "@/lib/corpus/ids";

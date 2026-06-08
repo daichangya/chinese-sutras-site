@@ -1,6 +1,6 @@
 /**
  * 经目 URL slug 解析
- * @author jingxin
+ * @author 代长亚
  */
 import { slugFromCbetaId } from "@/lib/cbeta/series-label";
 import type { SutraMeta } from "./types";

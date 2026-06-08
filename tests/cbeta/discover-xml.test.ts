@@ -1,5 +1,5 @@
 /**
- * @author jingxin
+ * @author 代长亚
  */
 import { describe, expect, it } from "vitest";
 import { cbetaIdFromXmlFilename, discoverCbetaXmlFiles } from "@/lib/cbeta/discover-xml";

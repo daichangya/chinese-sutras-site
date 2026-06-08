@@ -1,6 +1,6 @@
 /**
  * 剥离 CBETA 经前序文、帝王跋等非正文段落
- * @author jingxin
+ * @author 代长亚
  */
 import type { ParsedParagraph } from "./parser";
 

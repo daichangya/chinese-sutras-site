@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { GaijiText } from "@/components/reader/gaiji-text";
 import { PinyinRubyText } from "@/components/reader/pinyin-ruby-text";
-import { ReaderPreferences, ReadingProgress } from "@/components/reader/reader-preferences";
+import { ReadingProgress, useReaderPrefsInit } from "@/components/reader/reader-preferences";
+import { ReaderToolbar, type ReaderPanel } from "@/components/reader/reader-toolbar";
+import { ReaderPanelDrawer } from "@/components/reader/reader-panel-drawer";
 import { ChapterNav } from "@/components/reader/chapter-nav";
-import { ParagraphNoteButton } from "@/components/reader/paragraph-notes";
-import { SelectionPanel } from "@/components/reader/selection-panel";
-import { Button } from "@/components/ui/button";
-import { addBookmark, isBookmarked } from "@/lib/bookmarks/storage";
-import { isMvpSutra } from "@/lib/cbeta/mvp-canon";
+import { ComprehensionPanel } from "@/components/reader/comprehension-panel";
+import { ShareDialog } from "@/components/reader/share-dialog";
+import { ReaderToc } from "@/components/reader/reader-toc";
+import { useBookmarks } from "@/lib/bookmarks/use-bookmarks";
+import { getReaderTextSelection } from "@/lib/reader/reader-selection";
+import { useReadingProgress } from "@/lib/reader/use-reading-progress";
 import type { ParagraphRow, SutraRow } from "@/lib/sutra/queries";
 
 /** 简体 → 繁体（按需转换，不存 DB） */
@@ -42,16 +45,68 @@ export function ReaderShell({
   const [showPinyin, setShowPinyin] = useState(false);
   const [showTraditional, setShowTraditional] = useState(false);
   const [traditionalTexts, setTraditionalTexts] = useState<Record<string, string>>({});
+  type TranslatorPerson = {
+    id: string;
+    slug?: string;
+    name_zh: string;
+    name_en: string | null;
+    properties: string | null;
+  };
+  const [translatorPerson, setTranslatorPerson] = useState<TranslatorPerson | null>(null);
+  const [translatorLabel, setTranslatorLabel] = useState<string | null>(sutra.translator);
+
+  useReaderPrefsInit(setShowPinyin);
 
   useEffect(() => {
-    setShowPinyin(localStorage.getItem("jx-pinyin") === "1");
     setShowTraditional(localStorage.getItem("jx-traditional") === "1");
   }, []);
-  const hasColloquial = paragraphs.some((p) => p.colloquial);
-  const [bookmarked, setBookmarked] = useState(false);
-  const [activeParagraphId, setActiveParagraphId] = useState(paragraphs[0]?.id);
 
-  /** 按需转换繁体文本 */
+  useEffect(() => {
+    if (!sutra.cbetaId) return;
+    let cancelled = false;
+    fetch(`/api/kg/person?cbeta_id=${encodeURIComponent(sutra.cbetaId)}`)
+      .then((r) => r.json())
+      .then((data: { person?: TranslatorPerson | null; translatorLabel?: string | null }) => {
+        if (!cancelled) {
+          setTranslatorPerson(data.person ?? null);
+          setTranslatorLabel(data.translatorLabel ?? sutra.translator);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [sutra.cbetaId]);
+
+  useEffect(() => {
+    function syncReaderSelection() {
+      const readerSelection = getReaderTextSelection();
+      if (readerSelection) {
+        setSelectedText(readerSelection.text);
+        if (readerSelection.paragraphId) {
+          setActiveParagraphId(readerSelection.paragraphId);
+        }
+      }
+    }
+
+    document.addEventListener("selectionchange", syncReaderSelection);
+    return () => document.removeEventListener("selectionchange", syncReaderSelection);
+  }, []);
+
+  const hasColloquial = paragraphs.some((p) => p.colloquial);
+  const { addBookmark, isBookmarked, loading: bookmarksLoading } = useBookmarks();
+  const [activeParagraphId, setActiveParagraphId] = useState(paragraphs[0]?.id);
+  const [selectedText, setSelectedText] = useState("");
+  const [shareParagraph, setShareParagraph] = useState<ParagraphRow | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<ReaderPanel>(null);
+  const [, bumpFont] = useState(0);
+
+  function openShareDialog(p: ParagraphRow) {
+    setShareParagraph(p);
+    setShareOpen(true);
+  }
+
   useEffect(() => {
     if (!showTraditional) return;
     let cancelled = false;
@@ -68,23 +123,41 @@ export function ReaderShell({
       }
     };
     convert();
-    return () => { cancelled = true; };
-  }, [showTraditional, vernacular]);
+    return () => {
+      cancelled = true;
+    };
+  }, [showTraditional, vernacular, paragraphs]);
 
-  function toggleBookmark() {
-    addBookmark({
-      targetType: "sutra",
+  const alreadyBookmarked = isBookmarked(sutra.id);
+
+  useReadingProgress({
+    sutraId: sutra.id,
+    sutraSlug: sutra.slug,
+    sutraTitle: sutra.title,
+    activeParagraphId,
+  });
+
+  async function toggleBookmark() {
+    if (alreadyBookmarked) return;
+    await addBookmark({
       sutraId: sutra.id,
       sutraSlug: sutra.slug,
       sutraTitle: sutra.title,
     });
-    setBookmarked(true);
   }
 
   function handleReaderMouseUp(event: React.MouseEvent) {
     const el = (event.target as HTMLElement).closest("[data-paragraph-id]");
     const pid = el?.getAttribute("data-paragraph-id");
     if (pid) setActiveParagraphId(pid);
+
+    const readerSelection = getReaderTextSelection();
+    if (readerSelection) {
+      setSelectedText(readerSelection.text);
+      if (readerSelection.paragraphId) {
+        setActiveParagraphId(readerSelection.paragraphId);
+      }
+    }
   }
 
   function getDisplayText(p: ParagraphRow): string {
@@ -96,86 +169,64 @@ export function ReaderShell({
   return (
     <>
       <ReadingProgress />
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        {/* 经头 — 无尽藏式仪式感 */}
-        <header className="mb-8 pb-6 border-b border-[var(--jx-border)]">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-[var(--jx-muted-label)] tracking-wider">
-                  {sutra.cbetaId}
-                </span>
+      <div className="jx-reader mx-auto px-3 md:px-4 py-6 md:py-8">
+        <header className="mb-6 md:mb-8 pb-6 border-b border-[var(--jx-border)]/40">
+          <div className="flex flex-wrap items-start justify-between gap-3 md:gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--jx-muted-label)] tracking-wider">
+                <span>{sutra.cbetaId}</span>
                 {sutra.category && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--jx-paper-deep)] text-[var(--muted)]">
-                    {sutra.category}
-                  </span>
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span className="rounded-full bg-[var(--jx-paper-deep)] px-2 py-0.5 text-[var(--muted)]">
+                      {sutra.category}
+                    </span>
+                  </>
                 )}
               </div>
-              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[var(--foreground)]">
+              <h1 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight text-[var(--foreground)]">
                 {sutra.title}
               </h1>
-              {sutra.translator && (
-                <p className="mt-2 text-sm text-[var(--muted)] italic">
-                  {sutra.translator}
-                  {sutra.charCount ? ` · 约 ${sutra.charCount.toLocaleString()} 字` : ""}
+              {(translatorLabel || translatorPerson?.name_zh || sutra.charCount) && (
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  {[
+                    translatorPerson?.name_zh ?? translatorLabel,
+                    sutra.charCount ? `约 ${sutra.charCount} 字` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <ReaderPreferences onPinyinChange={setShowPinyin} />
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                className={`text-xs rounded-full ${showTraditional ? "bg-amber-800 text-white hover:bg-amber-900 border-amber-800" : ""}`}
-                onClick={() => {
+            <div className="w-full xl:w-auto">
+              <ReaderToolbar
+                activePanel={activePanel}
+                onOpenPanel={setActivePanel}
+                onFontDown={() => bumpFont((n) => n + 1)}
+                onFontUp={() => bumpFont((n) => n + 1)}
+                onBookmark={toggleBookmark}
+                onShare={() => {
+                  const p = paragraphs.find((x) => x.id === activeParagraphId) ?? paragraphs[0];
+                  if (p) openShareDialog(p);
+                }}
+                bookmarked={alreadyBookmarked}
+                bookmarkDisabled={bookmarksLoading}
+                parallelHref={`/parallel/${sutra.slug}`}
+                copybookHref={`/sutra/${sutra.slug}/copybook${chapters.length > 0 ? `?chapter=${currentChapter}` : ""}`}
+                hasColloquial={hasColloquial}
+                vernacular={vernacular}
+                onToggleVernacular={() => setVernacular((v) => !v)}
+                showTraditional={showTraditional}
+                onToggleTraditional={() => {
                   setShowTraditional((v) => !v);
                   localStorage.setItem("jx-traditional", showTraditional ? "0" : "1");
                 }}
-              >
-                {showTraditional ? "简体" : "繁体"}
-              </Button>
-              {hasColloquial && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  className={`text-xs rounded-full ${vernacular ? "bg-amber-800 text-white hover:bg-amber-900 border-amber-800" : ""}`}
-                  onClick={() => setVernacular((v) => !v)}
-                >
-                  {vernacular ? "原文" : "白话"}
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                className={`text-xs rounded-full ${bookmarked || isBookmarked(sutra.id) ? "text-amber-800 border-amber-300" : ""}`}
-                onClick={toggleBookmark}
-                disabled={bookmarked || isBookmarked(sutra.id)}
-              >
-                {bookmarked || isBookmarked(sutra.id) ? "已收藏" : "收藏"}
-              </Button>
-              {isMvpSutra(sutra.slug) && (
-                <Link
-                  href={`/sutra/${sutra.slug}/copybook${chapters.length > 0 ? `?chapter=${currentChapter}` : ""}`}
-                  className="inline-flex h-8 items-center rounded-full border border-amber-300 bg-amber-50 px-3 text-xs font-medium text-amber-900 hover:bg-amber-100"
-                  data-testid="reader-copybook-link"
-                >
-                  开始抄经
-                </Link>
-              )}
-              <Link
-                href="/"
-                className="text-xs text-[var(--jx-muted-label)] hover:text-[var(--foreground)] transition-colors px-2"
-              >
-                返回首页
-              </Link>
+                onPinyinChange={setShowPinyin}
+              />
             </div>
           </div>
         </header>
 
-        {/* 卷导航 */}
         <ChapterNav
           slug={sutra.slug}
           chapters={chapters}
@@ -183,42 +234,58 @@ export function ReaderShell({
           totalParagraphs={paragraphs.length}
         />
 
-        {/* 正文 + AI 侧栏 */}
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_var(--jx-sidebar-width)]">
-          {/* 正文 — 无尽藏式沉浸阅读 */}
-          <article
-            className="prose-jx reader-body animate-jx-fade-slow"
-            id="reader-content"
-            onMouseUp={handleReaderMouseUp}
-          >
-            {paragraphs.map((p, idx) => (
-              <p
-                key={p.id}
-                id={`p-${p.seq}`}
-                data-paragraph-id={p.id}
-                className={`group relative ${idx === 0 ? "animate-jx-fade" : ""}`}
-                style={idx === 0 ? { animationDelay: "100ms" } : {}}
-              >
-                {showPinyin ? (
-                  <PinyinRubyText text={getDisplayText(p)} />
-                ) : (
-                  <GaijiText text={getDisplayText(p)} />
-                )}
-                <ParagraphNoteButton sutraId={sutra.id} paragraphId={p.id} excerpt={p.text} />
-              </p>
-            ))}
-          </article>
+        <div className="flex flex-col xl:flex-row xl:gap-6">
+          <ReaderToc
+            sutraSlug={sutra.slug}
+            paragraphs={paragraphs}
+            activeParagraphId={activeParagraphId}
+            chapters={chapters}
+            currentChapter={currentChapter}
+          />
 
-          {/* AI 侧栏 — 大藏经AI式解释面板 */}
-          <SelectionPanel sutraTitle={sutra.title} paragraphId={activeParagraphId} />
+          <div className="flex min-w-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_var(--jx-sidebar-width)] lg:gap-10">
+            <article
+              className="prose-jx reader-body animate-jx-fade-s"
+              id="reader-content"
+              aria-label={`${sutra.title} - 正文`}
+              onMouseUp={handleReaderMouseUp}
+            >
+              {paragraphs.map((p, idx) => (
+                <p
+                  key={p.id}
+                  id={`p-${p.seq}`}
+                  data-paragraph-id={p.id}
+                  className={idx === 0 ? "animate-jx-fade" : undefined}
+                  style={idx === 0 ? { animationDelay: "100ms" } : undefined}
+                >
+                  {showPinyin ? (
+                    <PinyinRubyText text={getDisplayText(p)} />
+                  ) : (
+                    <GaijiText text={getDisplayText(p)} />
+                  )}
+                </p>
+              ))}
+            </article>
+
+            <div className="hidden xl:block">
+              <ComprehensionPanel
+                selection={selectedText}
+                onSelectionChange={setSelectedText}
+                sutraTitle={sutra.title}
+                sutraSlug={sutra.slug}
+                paragraphId={activeParagraphId}
+                translatorLabel={translatorLabel}
+                translatorPerson={translatorPerson}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* 相关经典 */}
         {related.length > 0 && (
-          <section className="mt-12 pt-8 border-t border-[var(--jx-border)]">
+          <section className="mt-12 pt-8 border-t border-[var(--jx-border)]/40">
             <div className="flex items-center gap-3 mb-4">
               <p className="jx-section-label">相关经典</p>
-              <div className="h-px flex-1 bg-gradient-to-r from-[var(--jx-border)] to-transparent" />
+              <div className="h-px flex-1 bg-gradient-to-r from-[var(--jx-border)]/40 to-transparent" />
             </div>
             <ul className="flex flex-wrap gap-3">
               {related.map((r) => (
@@ -235,6 +302,47 @@ export function ReaderShell({
           </section>
         )}
       </div>
+
+      <ReaderPanelDrawer panel={activePanel} onClose={() => setActivePanel(null)}>
+        {activePanel === "toc" && (
+          <ReaderToc
+            variant="embedded"
+            sutraSlug={sutra.slug}
+            paragraphs={paragraphs}
+            activeParagraphId={activeParagraphId}
+            chapters={chapters}
+            currentChapter={currentChapter}
+          />
+        )}
+        {activePanel === "comprehension" && (
+          <ComprehensionPanel
+            selection={selectedText}
+            onSelectionChange={setSelectedText}
+            sutraTitle={sutra.title}
+            sutraSlug={sutra.slug}
+            paragraphId={activeParagraphId}
+            translatorLabel={translatorLabel}
+            translatorPerson={translatorPerson}
+          />
+        )}
+      </ReaderPanelDrawer>
+
+      <ShareDialog
+        paragraph={
+          shareParagraph
+            ? {
+                id: shareParagraph.id,
+                seq: shareParagraph.seq,
+                text: shareParagraph.text,
+                sutraTitle: sutra.title,
+                sutraSlug: sutra.slug,
+                cbetaId: sutra.cbetaId,
+              }
+            : null
+        }
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+      />
     </>
   );
 }

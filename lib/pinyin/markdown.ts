@@ -1,6 +1,6 @@
 /**
  * 可读 Markdown 拼音转换（保留标题/引用/分隔线，正文转为空格分隔拼音）
- * @author jingxin
+ * @author 代长亚
  */
 import { segmentParagraph, toPlainText } from "./segment";
 import type { PinyinScript } from "./types";

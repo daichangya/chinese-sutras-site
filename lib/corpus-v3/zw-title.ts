@@ -1,6 +1,6 @@
 /**
  * ZW 藏外文献：同名冲突时在 title 追加（ZW第N卷）
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
@@ -8,6 +8,7 @@ import { corpusDirName } from "@/lib/cbeta/corpus-category";
 import { toSimplifiedLabel } from "./sutra-labels";
 import type { SutraMeta } from "./types";
 import { findSutraMetaFiles, loadSutraMeta } from "./meta";
+import { joinSutraPath, resolveSutrasRoot } from "./paths";
 
 const ZW_CBETA_RE = /^ZW\d/i;
 const ZW_VOL_SUFFIX_RE = /（ZW第\d+卷）$/;
@@ -68,7 +69,7 @@ export function buildTitleCollisionIndex(corpusRoot: string): TitleCollisionInde
     } catch {
       continue;
     }
-    const rel = path.relative(corpusRoot, path.dirname(metaPath)).replace(/\\/g, "/");
+    const rel = path.relative(resolveSutrasRoot(corpusRoot), path.dirname(metaPath)).replace(/\\/g, "/");
     const deptDir = rel.split("/")[0] ?? "";
     if (!deptDir) continue;
     const baseTitle = stripZwVolumeTitleSuffix(meta.title);
@@ -146,7 +147,7 @@ export function refreshAuxMdTitles(sutraDir: string, oldTitle: string, newTitle:
 
 /** 从 meta 路径推导部类目录名 */
 export function deptDirFromMetaPath(corpusRoot: string, metaPath: string): string {
-  const rel = path.relative(corpusRoot, path.dirname(metaPath)).replace(/\\/g, "/");
+  const rel = path.relative(resolveSutrasRoot(corpusRoot), path.dirname(metaPath)).replace(/\\/g, "/");
   return rel.split("/")[0] ?? "";
 }
 
@@ -158,7 +159,7 @@ export function findCbetaIdsWithSameBaseTitleInDept(
   excludeCbetaId?: string,
 ): string[] {
   const out: string[] = [];
-  const deptRoot = path.join(corpusRoot, deptDir);
+  const deptRoot = joinSutraPath(corpusRoot, deptDir);
   if (!fs.existsSync(deptRoot)) return out;
 
   const walk = (dir: string) => {

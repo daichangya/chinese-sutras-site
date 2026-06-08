@@ -1,17 +1,30 @@
 /**
  * 知识图谱子图查询（server-only）
- * @author jingxin
+ * @author 代长亚
  */
 import "server-only";
 
 import { getSqlite } from "@/lib/db";
 import { normalizeUserZhQuery } from "@/lib/han/storage-normalize";
 import { labelPredicate } from "@/lib/kg/labels";
-import { entityIdToSlug, resolveEntityIdFromSlugOrId } from "@/lib/kg/slug";
+import {
+  entityIdToSlug,
+  slugEntityTypeCandidates,
+  slugToEntityId,
+} from "@/lib/kg/slug";
 import { HIDE_HEURISTIC_PERSON_SQL } from "@/lib/kg/visibility";
+import {
+  HAS_GEO_COORDS_SQL,
+  PERSON_GEO_VISIBLE_SQL,
+  parseKgLatLng,
+  rowToKgGeoEntity,
+  type KgGeoEntity,
+} from "@/lib/kg/geo";
 import type { KgGraphEdge, KgGraphNode, KgSubgraph } from "@/lib/kg/types";
 
 export type { KgGraphEdge, KgGraphNode, KgSubgraph } from "@/lib/kg/types";
+export type { KgGeoEntity } from "@/lib/kg/geo";
+export { parseKgLatLng } from "@/lib/kg/geo";
 
 function hasKgTables(): boolean {
   const db = getSqlite();
@@ -21,51 +34,51 @@ function hasKgTables(): boolean {
 }
 
 /** 将用户输入（名称、slug 或 ID）解析为 kg_entity.id */
-export function resolveKgCenterId(query: string): string | undefined {
-  const q = normalizeUserZhQuery(query);
-  if (!q) return undefined;
-  if (!hasKgTables()) return undefined;
+export function resolveKgCenterId(query: string, entityTypeHint?: string): string | undefined {
+  return resolveEntityId(query, entityTypeHint);
+}
 
+export function lookupKgEntityMeta(
+  entityId: string,
+): { id: string; entity_type: string; name_zh: string } | null {
+  if (!hasKgTables()) return null;
   const db = getSqlite();
-  const fromSlug = resolveEntityIdFromSlugOrId(q);
-  if (fromSlug) {
-    const row = db
-      .prepare(
-        `SELECT id FROM kg_entity e WHERE e.id = ? AND ${HIDE_HEURISTIC_PERSON_SQL} LIMIT 1`,
-      )
-      .get(fromSlug) as { id: string } | undefined;
-    if (row) return row.id;
-  }
-
   const row = db
     .prepare(
-      `SELECT e.id
-       FROM kg_entity e
-       WHERE ${HIDE_HEURISTIC_PERSON_SQL}
-         AND e.entity_type = 'person'
-         AND (e.name_zh = ? OR e.name_zh LIKE ? OR e.id LIKE ?)
-       ORDER BY (
-         SELECT COUNT(*) FROM kg_relation r
-         WHERE r.subject_id = e.id OR r.object_id = e.id
-       ) DESC, e.source_tier = 'authoritative' DESC, length(e.name_zh) ASC
-       LIMIT 1`,
+      `SELECT id, entity_type, name_zh FROM kg_entity e
+       WHERE e.id = ? AND ${HIDE_HEURISTIC_PERSON_SQL} LIMIT 1`,
     )
-    .get(q, `%${q}%`, `%${q}%`) as { id: string } | undefined;
+    .get(entityId) as { id: string; entity_type: string; name_zh: string } | undefined;
+  return row ?? null;
+}
 
+function lookupEntityId(db: ReturnType<typeof getSqlite>, id: string): string | undefined {
+  const row = db
+    .prepare(
+      `SELECT id FROM kg_entity e WHERE e.id = ? AND ${HIDE_HEURISTIC_PERSON_SQL} LIMIT 1`,
+    )
+    .get(id) as { id: string } | undefined;
   return row?.id;
 }
 
 export function resolveEntityId(query: string, entityType?: string): string | undefined {
   if (!hasKgTables()) return undefined;
   const db = getSqlite();
-  const fromSlug = resolveEntityIdFromSlugOrId(query, entityType);
-  if (fromSlug) {
-    const row = db
-      .prepare(`SELECT id FROM kg_entity e WHERE e.id = ? AND ${HIDE_HEURISTIC_PERSON_SQL} LIMIT 1`)
-      .get(fromSlug) as { id: string } | undefined;
-    if (row) return row.id;
+  const raw = decodeURIComponent(query.trim());
+  if (!raw) return undefined;
+
+  if (raw.startsWith("kg:")) {
+    return lookupEntityId(db, raw);
   }
-  const q = normalizeUserZhQuery(query);
+
+  for (const t of slugEntityTypeCandidates(raw, entityType)) {
+    const candidate = slugToEntityId(raw, t);
+    if (!candidate) continue;
+    const found = lookupEntityId(db, candidate);
+    if (found) return found;
+  }
+
+  const q = normalizeUserZhQuery(raw);
   if (!q) return undefined;
   const typeClause = entityType ? ` AND e.entity_type = ?` : "";
   const params: string[] = [q, `%${q}%`, `%${q}%`];
@@ -75,9 +88,16 @@ export function resolveEntityId(query: string, entityType?: string): string | un
       `SELECT e.id FROM kg_entity e
        WHERE ${HIDE_HEURISTIC_PERSON_SQL}
          AND (e.name_zh = ? OR e.name_zh LIKE ? OR e.id LIKE ?)${typeClause}
-       ORDER BY (
-         SELECT COUNT(*) FROM kg_relation r WHERE r.subject_id = e.id OR r.object_id = e.id
-       ) DESC
+       ORDER BY
+         CASE e.entity_type
+           WHEN 'school' THEN 0
+           WHEN 'person' THEN 1
+           WHEN 'concept' THEN 2
+           ELSE 3
+         END,
+         (
+           SELECT COUNT(*) FROM kg_relation r WHERE r.subject_id = e.id OR r.object_id = e.id
+         ) DESC
        LIMIT 1`,
     )
     .get(...params) as { id: string } | undefined;
@@ -169,7 +189,7 @@ function getBfsSubgraph(
     params.push(String(limit));
 
     const batch = db.prepare(sql).all(...params) as KgGraphEdge[];
-    const nextFrontier = new Set<string>();
+    const candidateIds = new Set<string>();
 
     for (const e of batch) {
       const key = `${e.source}|${e.predicate}|${e.target}`;
@@ -181,17 +201,22 @@ function getBfsSubgraph(
       edgeKeys.add(key);
       allEdges.push(e);
       for (const nid of [e.source, e.target]) {
-        if (!nodeIds.has(nid)) {
-          const ent = db
-            .prepare(
-              `SELECT id FROM kg_entity e WHERE e.id = ? AND ${HIDE_HEURISTIC_PERSON_SQL} LIMIT 1`,
-            )
-            .get(nid) as { id: string } | undefined;
-          if (ent) {
-            nodeIds.add(nid);
-            nextFrontier.add(nid);
-          }
-        }
+        if (!nodeIds.has(nid)) candidateIds.add(nid);
+      }
+    }
+
+    const nextFrontier = new Set<string>();
+    const toValidate = [...candidateIds];
+    if (toValidate.length > 0) {
+      const ph = toValidate.map(() => "?").join(",");
+      const valid = db
+        .prepare(
+          `SELECT id FROM kg_entity e WHERE e.id IN (${ph}) AND ${HIDE_HEURISTIC_PERSON_SQL}`,
+        )
+        .all(...toValidate) as Array<{ id: string }>;
+      for (const ent of valid) {
+        nodeIds.add(ent.id);
+        nextFrontier.add(ent.id);
       }
     }
     frontier = [...nextFrontier];
@@ -300,37 +325,6 @@ export function getKgTimeline(entityType?: string): KgTimelineEntity[] {
   return out;
 }
 
-export type KgGeoEntity = {
-  id: string;
-  slug: string;
-  name_zh: string;
-  entity_type: string;
-  lat: number;
-  lng: number;
-};
-
-export function getKgGeoEntities(options?: {
-  types?: string[];
-  limit?: number;
-}): KgGeoEntity[] {
-  const types = options?.types?.length
-    ? options.types
-    : ["place", "monastery", "person", "school"];
-  const limit = options?.limit ?? 500;
-  const places = listPlaceEntities(limit * 2);
-  return places
-    .filter((p) => types.includes(p.entityType))
-    .slice(0, limit)
-    .map((p) => ({
-      id: p.id,
-      slug: entityIdToSlug(p.id),
-      name_zh: p.nameZh,
-      entity_type: p.entityType,
-      lat: p.lat,
-      lng: p.lng,
-    }));
-}
-
 export type KgLineageArc = {
   fromId: string;
   toId: string;
@@ -342,7 +336,25 @@ export type KgLineageArc = {
   toLng: number;
 };
 
-export function getKgLineageArcs(limit = 200): KgLineageArc[] {
+let geoIndexEnsured = false;
+
+function ensureKgGeoIndex(): void {
+  if (geoIndexEnsured) return;
+  const db = getSqlite();
+  if (!hasKgTables()) return;
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_kg_entity_type ON kg_entity(entity_type)`);
+  geoIndexEnsured = true;
+}
+
+export function getKgGeoEntities(options?: {
+  types?: string[];
+  limit?: number;
+  bbox?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+}): KgGeoEntity[] {
+  return listPlaceEntities(options);
+}
+
+export function getKgLineageArcs(limit = 8000): KgLineageArc[] {
   if (!hasKgTables()) return [];
   const db = getSqlite();
   const rows = db
@@ -355,6 +367,10 @@ export function getKgLineageArcs(limit = 200): KgLineageArc[] {
        WHERE r.predicate = 'teacher_of'
          AND ${HIDE_HEURISTIC_PERSON_SQL.replace(/e\./g, "s.")}
          AND ${HIDE_HEURISTIC_PERSON_SQL.replace(/e\./g, "t.")}
+         AND ${HAS_GEO_COORDS_SQL.replace(/e\./g, "s.")}
+         AND ${HAS_GEO_COORDS_SQL.replace(/e\./g, "t.")}
+         AND ${PERSON_GEO_VISIBLE_SQL.replace(/e\./g, "s.")}
+         AND ${PERSON_GEO_VISIBLE_SQL.replace(/e\./g, "t.")}
        LIMIT ?`,
     )
     .all(limit) as Array<{
@@ -368,8 +384,8 @@ export function getKgLineageArcs(limit = 200): KgLineageArc[] {
 
   const out: KgLineageArc[] = [];
   for (const r of rows) {
-    const from = parseLatLng(r.fromProps);
-    const to = parseLatLng(r.toProps);
+    const from = parseKgLatLng(r.fromProps);
+    const to = parseKgLatLng(r.toProps);
     if (!from || !to) continue;
     out.push({
       fromId: r.subject_id,
@@ -383,21 +399,6 @@ export function getKgLineageArcs(limit = 200): KgLineageArc[] {
     });
   }
   return out;
-}
-
-function parseLatLng(properties: string | null): { lat: number; lng: number } | null {
-  if (!properties) return null;
-  try {
-    const p = JSON.parse(properties) as Record<string, unknown>;
-    const lat = (p.lat ?? p.latitude) as number | undefined;
-    const lng = (p.lng ?? p.longitude) as number | undefined;
-    if (typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng)) {
-      return { lat, lng };
-    }
-  } catch {
-    /* ignore */
-  }
-  return null;
 }
 
 export function getEntityDetail(entityId: string): {
@@ -541,51 +542,120 @@ export function getSutrasForPerson(personId: string): Array<{
     .all(personId, personId) as Array<{ cbetaId: string; title: string; slug: string }>;
 }
 
-export function listPlaceEntities(limit = 100): Array<{
-  id: string;
-  nameZh: string;
-  entityType: string;
-  lat: number;
-  lng: number;
-}> {
+function hasKgGeoFlatTable(): boolean {
   const db = getSqlite();
-  if (!hasKgTables()) return [];
+  return !!db
+    .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='kg_geo_flat'`)
+    .get();
+}
 
-  const rows = db
-    .prepare(
-      `SELECT id, name_zh as nameZh, entity_type as entityType, properties
-       FROM kg_entity e
-       WHERE ${HIDE_HEURISTIC_PERSON_SQL}
-         AND entity_type IN ('place', 'monastery', 'person', 'school')
-       LIMIT ?`,
-    )
-    .all(limit * 3) as Array<{
-    id: string;
-    nameZh: string;
-    entityType: string;
-    properties: string | null;
-  }>;
+function listPlaceEntitiesFromFlat(options?: {
+  types?: string[];
+  limit?: number;
+  bbox?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+}): KgGeoEntity[] {
+  const types = options?.types?.length
+    ? options.types
+    : ["place", "monastery", "person", "school"];
+  const limit = options?.limit ?? 5000;
+  const db = getSqlite();
+  const placeholders = types.map(() => "?").join(", ");
+  let sql = `
+    SELECT entity_id as id, name_zh as nameZh, entity_type as entityType,
+           lat, lng, geo_source as geoSource, slug,
+           province, city, description
+    FROM kg_geo_flat
+    WHERE entity_type IN (${placeholders})`;
+  const params: Array<string | number> = [...types];
 
-  const out: Array<{
+  if (options?.bbox) {
+    sql += ` AND lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?`;
+    params.push(
+      options.bbox.minLat,
+      options.bbox.maxLat,
+      options.bbox.minLng,
+      options.bbox.maxLng,
+    );
+  }
+  sql += ` LIMIT ?`;
+  params.push(limit);
+
+  const rows = db.prepare(sql).all(...params) as Array<{
     id: string;
     nameZh: string;
     entityType: string;
     lat: number;
     lng: number;
-  }> = [];
+    geoSource: string | null;
+    slug: string | null;
+    province: string | null;
+    city: string | null;
+    description: string | null;
+  }>;
 
-  for (const r of rows) {
-    const coords = parseLatLng(r.properties);
-    if (!coords) continue;
-    out.push({
-      id: r.id,
-      nameZh: r.nameZh,
-      entityType: r.entityType,
-      lat: coords.lat,
-      lng: coords.lng,
-    });
-    if (out.length >= limit) break;
+  return rows.map((r) => ({
+    id: r.id,
+    slug: r.slug ?? entityIdToSlug(r.id),
+    name_zh: r.nameZh,
+    name_en: null,
+    entity_type: r.entityType,
+    lat: r.lat,
+    lng: r.lng,
+    province: r.province,
+    city: r.city,
+    district: null,
+    description: r.description,
+    year_start: null,
+    year_end: null,
+    geo_source: r.geoSource,
+  }));
+}
+
+export function listPlaceEntities(options?: {
+  types?: string[];
+  limit?: number;
+  bbox?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+}): KgGeoEntity[] {
+  const types = options?.types?.length
+    ? options.types
+    : ["place", "monastery", "person", "school"];
+  const limit = options?.limit ?? 5000;
+  const db = getSqlite();
+  if (!hasKgTables()) return [];
+
+  if (hasKgGeoFlatTable()) {
+    const flatCount = (
+      db.prepare(`SELECT COUNT(*) as c FROM kg_geo_flat`).get() as { c: number }
+    ).c;
+    if (flatCount > 0) {
+      return listPlaceEntitiesFromFlat({ types, limit, bbox: options?.bbox });
+    }
   }
 
+  ensureKgGeoIndex();
+  const placeholders = types.map(() => "?").join(", ");
+  const rows = db
+    .prepare(
+      `SELECT id, name_zh as nameZh, name_en as nameEn, entity_type as entityType, properties
+       FROM kg_entity e
+       WHERE ${HIDE_HEURISTIC_PERSON_SQL}
+         AND ${HAS_GEO_COORDS_SQL}
+         AND ${PERSON_GEO_VISIBLE_SQL}
+         AND entity_type IN (${placeholders})
+       LIMIT ?`,
+    )
+    .all(...types, limit) as Array<{
+    id: string;
+    nameZh: string;
+    nameEn: string | null;
+    entityType: string;
+    properties: string | null;
+  }>;
+
+  const out: KgGeoEntity[] = [];
+  for (const r of rows) {
+    const entity = rowToKgGeoEntity(r, entityIdToSlug);
+    if (entity) out.push(entity);
+  }
   return out;
 }

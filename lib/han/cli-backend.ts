@@ -1,6 +1,6 @@
 /**
  * 系统 opencc CLI 后端（批量转换优先）
- * @author jingxin
+ * @author 代长亚
  */
 import { execSync } from "child_process";
 import fs from "fs";
@@ -10,6 +10,7 @@ import type { ConvertDirection } from "./types";
 import { getCbetaExtraJsonPath } from "./dict";
 
 let cliAvailableCache: boolean | null = null;
+let cliDictSupportedCache: boolean | null = null;
 
 export function getOpenccBin(): string {
   return process.env.OPENCC_BIN ?? "opencc";
@@ -26,9 +27,41 @@ export function isCliAvailable(): boolean {
   return cliAvailableCache;
 }
 
+/** OpenCC CLI 是否支持 -d 自定义词典（macOS/Homebrew 旧版常不支持） */
+export function isCliDictSupported(): boolean {
+  if (cliDictSupportedCache !== null) return cliDictSupportedCache;
+  if (!isCliAvailable()) {
+    cliDictSupportedCache = false;
+    return false;
+  }
+  const dictPath = getCbetaExtraJsonPath();
+  if (!fs.existsSync(dictPath)) {
+    cliDictSupportedCache = false;
+    return false;
+  }
+  const bin = getOpenccBin();
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "jingxin-opencc-probe-"));
+  const tmpIn = path.join(tmpDir, "in.txt");
+  const tmpOut = path.join(tmpDir, "out.txt");
+  try {
+    fs.writeFileSync(tmpIn, "觀", "utf-8");
+    execSync(
+      `"${bin}" -i "${tmpIn}" -o "${tmpOut}" -c t2s.json -d "${dictPath.replace(/"/g, '\\"')}"`,
+      { encoding: "utf-8", stdio: "pipe" },
+    );
+    cliDictSupportedCache = true;
+  } catch {
+    cliDictSupportedCache = false;
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+  return cliDictSupportedCache;
+}
+
 /** 测试时可重置 CLI 可用性缓存 */
 export function resetCliAvailabilityCache(): void {
   cliAvailableCache = null;
+  cliDictSupportedCache = null;
 }
 
 function openccConfig(direction: ConvertDirection): string {
@@ -46,7 +79,7 @@ export function convertViaCli(text: string, direction: ConvertDirection): string
   try {
     fs.writeFileSync(tmpIn, text, "utf-8");
     const dictArg =
-      direction === "t2s" && fs.existsSync(dictPath)
+      direction === "t2s" && isCliDictSupported()
         ? ` -d "${dictPath.replace(/"/g, '\\"')}"`
         : "";
     execSync(`"${bin}" -i "${tmpIn}" -o "${tmpOut}" -c ${config}${dictArg}`, {

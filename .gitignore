@@ -34,10 +34,27 @@ yarn-error.log*
 # data
 /data/*.db
 /data/*.db-*
-/vendor/xml-p5/
+/vendor/
 
 # markdown sutras corpus (separate git repo)
 /chinese-sutras-md/
+
+# Fo Guang MDict source files (local only, ~51MB)
+/佛光大辭典/
+
+/cbeta-api/
+/cbeta/
+/cbwork-bin/
+/fojin/
+
+.vscode/
+.cursor/
+.claude/
+.omc/
+/openspec/
+/Selftrae/
+/logs/
+/node_modules/
 
 # full canon corpus (local gen only)
 /corpus-full/sutras/
@@ -46,3 +63,4 @@ yarn-error.log*
 
 # typescript
 next-env.d.ts
+*.tsbuildinfo

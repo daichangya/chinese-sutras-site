@@ -4,8 +4,9 @@ import { getSqlite } from "@/lib/db";
 import { getDailyVerse, getParagraphById } from "@/lib/sutra/queries";
 import { getSutraBySlug } from "@/lib/sutra/queries";
 import { listPopularSutras } from "@/lib/search/fts";
+import { brandInlineLabel } from "@/lib/brand";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -54,9 +55,9 @@ export default function VerseTodayPage() {
   return (
     <div className="jx-page animate-jx-fade">
       {/* 经句卡片 */}
-      <div className="share-card rounded-2xl border border-[#dcc9a0] bg-gradient-to-br from-[var(--jx-paper-elevated)] via-[var(--jx-paper)] to-amber-50/60 p-10 text-center dark:border-amber-900/40 dark:from-stone-900 dark:to-stone-950">
-        <p className="jx-section-label text-amber-800/80 dark:text-amber-400/80 mb-6">今日经句</p>
-        <blockquote className="text-2xl md:text-3xl font-normal leading-relaxed tracking-wide text-[var(--jx-ink)] dark:text-stone-100">
+      <div className="share-card rounded-xl md:rounded-2xl border border-[#dcc9a0] bg-gradient-to-br from-[var(--jx-paper-elevated)] via-[var(--jx-paper)] to-[rgb(139_37_0/0.04)] p-6 md:p-10 text-center dark:border-[var(--jx-border)]/40 dark:from-stone-900 dark:to-stone-950">
+        <p className="jx-section-label text-[var(--jx-accent-cinnabar)]/80 dark:text-[var(--jx-gold)]/80 mb-4 md:mb-6">今日经句</p>
+        <blockquote className="text-xl md:text-3xl font-normal leading-relaxed tracking-wide text-[var(--jx-ink)] dark:text-stone-100">
           {verseText}
         </blockquote>
         {sutraTitle && (
@@ -74,7 +75,7 @@ export default function VerseTodayPage() {
             </p>
           </div>
         )}
-        <p className="mt-8 text-xs text-[var(--jx-muted-label)]">静心 · jingxin</p>
+        <p className="mt-8 text-xs text-[var(--jx-muted-label)]">{brandInlineLabel()}</p>
       </div>
 
       {/* 操作链接 */}

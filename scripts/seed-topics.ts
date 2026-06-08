@@ -1,9 +1,9 @@
 /**
  * 种子：专题与 tag
- * @author jingxin
+ * @author 代长亚
  */
 import { v4 as uuidv4 } from "uuid";
-import { getSqlite, closeDb } from "@/lib/db";
+import { getSqlite, closeDb } from "@/lib/db/sqlite";
 
 const db = getSqlite();
 

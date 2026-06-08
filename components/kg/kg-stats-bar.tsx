@@ -1,6 +1,6 @@
 /**
  * 知识图谱统计面板（可折叠）
- * @author jingxin
+ * @author 代长亚
  */
 "use client";
 

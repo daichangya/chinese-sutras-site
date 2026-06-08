@@ -1,6 +1,6 @@
 /**
  * 语料库磁盘目录名（简体中文）
- * @author jingxin
+ * @author 代长亚
  */
 
 /** 正文（CBETA 繁体可读 MD，由 corpus:gen / restore-yuanwen 写入） */

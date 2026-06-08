@@ -1,6 +1,6 @@
 /**
  * 从 kx.xml + buddhist-phrases.json 生成拼音词典
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
@@ -36,7 +36,7 @@ function writePhrasesTs(phrases: PhrasePair[]): void {
     .join(",\n");
   const content = `/**
  * 佛经专名词组拼音（由 scripts/build-pinyin-dict.ts 生成，勿手改）
- * @author jingxin
+ * @author 代长亚
  */
 export const BUDDHIST_PHRASES: [string, string][] = [
 ${fmt}

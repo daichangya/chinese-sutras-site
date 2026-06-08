@@ -1,6 +1,6 @@
 /**
  * 知识图谱关系筛选控件
- * @author jingxin
+ * @author 代长亚
  */
 "use client";
 

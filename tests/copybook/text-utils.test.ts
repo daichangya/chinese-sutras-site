@@ -1,6 +1,6 @@
 /**
  * 抄经文本工具测试
- * @author jingxin
+ * @author 代长亚
  */
 import { describe, expect, it } from "vitest";
 import {

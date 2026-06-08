@@ -1,9 +1,9 @@
 /**
  * 将 paragraph.text 从繁体转为简体中文
- * @author jingxin
+ * @author 代长亚
  */
 import { t2sBatch } from "@/lib/han";
-import { getSqlite, closeDb } from "@/lib/db";
+import { getSqlite, closeDb } from "@/lib/db/sqlite";
 
 const db = getSqlite();
 

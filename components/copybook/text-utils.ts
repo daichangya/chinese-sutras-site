@@ -1,6 +1,6 @@
 /**
  * 抄经字帖文本处理
- * @author jingxin
+ * @author 代长亚
  */
 
 export const COPYBOOK_CHAR_LIMIT = 2000;

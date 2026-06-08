@@ -1,6 +1,6 @@
 /**
  * 可读 Markdown 繁简转换（保留标题/引用/分隔线结构）
- * @author jingxin
+ * @author 代长亚
  */
 
 /** 转换 corpus 原文/简体 Markdown，只转换正文与标题文字 */

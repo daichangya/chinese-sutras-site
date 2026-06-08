@@ -1,17 +1,18 @@
 /**
  * Corpus V3 类型定义
- * @author jingxin
+ * @author 代长亚
  */
 import type { StructureBlock, StructureJuan } from "@/lib/cbeta/structure";
 
-/** 在家目录子类（见 cbeta/static/zaijia.txt，仅 meta，不参与目录路径） */
-export type SutraZaijiaMeta = {
-  /** 一级部类，如 般若部類（zaijia.txt 原文） */
-  section?: string;
-  /** 二级主题，如 其他般若 */
-  topic?: string;
-  /** 经｜疏（疏含疏钞、释论、发隐等） */
+/** bulei.txt 部类目录元数据（不参与顶层路径，供审计） */
+export type SutraBuleiMeta = {
+  section_code: string;
+  section: string;
+  group: string;
+  path?: string[];
   kind?: "经" | "疏";
+  /** 数据来源：bulei.txt / juan / sutralist / short / catalog / alias / inferred */
+  source?: string;
 };
 
 export type SutraMeta = {
@@ -23,8 +24,8 @@ export type SutraMeta = {
   translator?: string;
   dynasty?: string;
   category: string;
-  /** 在家目录子类（zaijia.txt） */
-  zaijia?: SutraZaijiaMeta;
+  /** bulei 部类目录（cbwork-bin/cbreader2X/bulei/bulei.txt） */
+  bulei?: SutraBuleiMeta;
   juanCount?: number;
   sourceXml: string[];
   description?: string;

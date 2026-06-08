@@ -12,8 +12,8 @@ import {
   lookupXuzangCategory,
   resetTaishoCategoryIndexCache,
 } from "@/lib/cbeta/corpus-category";
-import { getZaijiaMeta, loadZaijiaCategoryIndex, loadZaijiaIndexes } from "@/lib/cbeta/zaijia-category";
-import { zaijiaFieldsForCbetaId } from "@/lib/corpus-v3/meta";
+import { getBuleiMeta, resolveBuleiMeta } from "@/lib/cbeta/bulei-catalog";
+import { buleiFieldsForCbetaId } from "@/lib/corpus-v3/meta";
 
 describe("canonDeptFromCbetaId", () => {
   beforeAll(() => {
@@ -24,8 +24,6 @@ describe("canonDeptFromCbetaId", () => {
     expect(xIdx.size).toBeGreaterThan(1000);
     const auxIdx = loadAuxiliaryCanonCategoryIndex();
     expect(auxIdx.size).toBeGreaterThan(100);
-    const z = loadZaijiaCategoryIndex();
-    expect(z.size).toBeGreaterThan(500);
   });
 
   it("maps Taisho agama/prajna/huayan", () => {
@@ -42,16 +40,16 @@ describe("canonDeptFromCbetaId", () => {
     ).toBe("般若");
   });
 
-  it("maps 诸宗/续诸宗 T 著述: zaijia 优先于 sch", () => {
+  it("maps 诸宗/续诸宗 T 著述 via bulei", () => {
     expect(canonDeptFromCbetaId("T46n1916", "释禅波罗蜜次第法门")).toBe("法华");
     expect(canonDeptFromCbetaId("T70n2296")).toBe("论集（杂论、通论）");
   });
 
-  it("maps T37 阿弥陀经疏 via zaijia 寶積部類疏→宝积", () => {
+  it("maps T37 阿弥陀经疏 via bulei 寶積部類疏→宝积", () => {
     expect(canonDeptFromCbetaId("T37n1757", "阿弥陀经疏")).toBe("宝积");
-    const zm = getZaijiaMeta("T37n1757");
-    expect(zm?.sectionLabel).toBe("寶積部類");
-    expect(zm?.kind).toBe("疏");
+    const bm = getBuleiMeta("T37n1757");
+    expect(bm?.sectionLabel).toBe("寶積部類");
+    expect(bm?.kind).toBe("疏");
   });
 
   it("maps school categories", () => {
@@ -59,8 +57,8 @@ describe("canonDeptFromCbetaId", () => {
     expect(canonDeptFromCbetaId("T48n2001")).toBe("禅宗");
   });
 
-  it("maps catalog and dunhuang", () => {
-    expect(canonDeptFromCbetaId("T55n2145")).toBe("宗教（总类 / 总论）");
+  it("maps catalog and dunhuang (bulei 事彙 / T85 sch)", () => {
+    expect(canonDeptFromCbetaId("T55n2145")).toBe("事汇（类书、辞典、法数典籍）");
     expect(canonDeptFromCbetaId("T85n2732")).toBe("敦煌写本（敦煌出土古写经）");
   });
 
@@ -70,29 +68,29 @@ describe("canonDeptFromCbetaId", () => {
     expect(canonDeptFromCbetaId("B01n0001")).toBe("新编（新增及近现代文献）");
   });
 
-  it("maps X 卍续 via zaijia (般若部類疏→般若)", () => {
+  it("maps X 卍续 via bulei (般若部類疏→般若)", () => {
     expect(canonDeptFromCbetaId("X26n0551", "般若心經發隱")).toBe("般若");
     expect(canonDeptFromCbetaId("X26n0529", "般若心經疏")).toBe("般若");
   });
 
-  it("maps X 卍续 via zaijia (般若部類义疏→般若)", () => {
+  it("maps X 卍续 via bulei (般若部類义疏→般若)", () => {
     expect(canonDeptFromCbetaId("X24n0451", "大品經義疏")).toBe("般若");
   });
 
-  it("prefers zaijia over sutra_sch for X 般若科仪 (X74n1494→般若)", () => {
+  it("prefers bulei over sutra_sch for X 般若科仪 (X74n1494→般若)", () => {
     expect(lookupXuzangCategory("X74n1494")).toBe("宗教（总类 / 总论）");
     expect(canonDeptFromCbetaId("X74n1494", "金刚经科仪")).toBe("般若");
   });
 
-  it("maps by title when not in zaijia", () => {
+  it("maps by title when not in bulei", () => {
     expect(canonDeptFromCbetaId("X70n1400", "高峰原妙禪師語錄")).toBe("禅宗");
     expect(categoryFromTitle("般若心經發隱")).toBe("论集（杂论、通论）");
     expect(categoryFromTitle("道行般若經")).toBe("般若");
   });
 
-  it("maps X 卍续 via sutra_sch.lst index", () => {
+  it("maps X 卍续 via bulei over sutra_sch when listed", () => {
     expect(lookupXuzangCategory("X14n0292")).toBe("论集（杂论、通论）");
-    expect(canonDeptFromCbetaId("X14n0292", "楞严经击节")).toBe("论集（杂论、通论）");
+    expect(canonDeptFromCbetaId("X14n0292", "楞严经击节")).toBe("密教（真言宗、陀罗尼、仪轨）");
     expect(canonDeptFromCbetaId("X03n0208", "华严经论")).toBe("华严");
     expect(canonDeptFromCbetaId("X69n1322")).toBe("禅宗");
     expect(categoryFromTitle("楞严经击节")).toBe("论集（杂论、通论）");
@@ -111,13 +109,13 @@ describe("canonDeptFromCbetaId", () => {
     }
   });
 
-  it("maps A 金藏 catalog works to 宗教 not 新编", () => {
+  it("maps A 金藏 catalog works via bulei 事彙部類", () => {
     expect(lookupAuxiliaryCanonCategory("A097n1267")).toBe("宗教（总类 / 总论）");
     expect(
       canonDeptFromCbetaId("A097n1267", "大唐开元释教广品历章(第3卷-第4卷)"),
-    ).toBe("宗教（总类 / 总论）");
+    ).toBe("事汇（类书、辞典、法数典籍）");
     expect(isModernXinbianCorpus("A097n1267", "大唐开元释教广品历章")).toBe(false);
-    expect(canonDeptFromCbetaId("A110n1490", "天圣释教总录")).toBe("宗教（总类 / 总论）");
+    expect(canonDeptFromCbetaId("A110n1490", "天圣释教总录")).toBe("事汇（类书、辞典、法数典籍）");
   });
 
   it("maps T45 三論惟識宗 via taisho sch not 新编", () => {
@@ -132,32 +130,28 @@ describe("canonDeptFromCbetaId", () => {
     );
   });
 
-  it("maps F03 御注金刚经 via zaijia 般若部類疏→般若", () => {
+  it("maps F03 御注金刚经 via bulei 般若部類疏→般若", () => {
     expect(
       canonDeptFromCbetaId("F03n0100", "金刚般若波罗蜜经（御注并序）"),
     ).toBe("般若");
-    const zm = getZaijiaMeta("F03n0100");
-    expect(zm?.sectionLabel).toBe("般若部類");
-    expect(zm?.kind).toBe("疏");
+    const bm = resolveBuleiMeta("F03n0100");
+    expect(bm?.sectionLabel).toBe("般若部類");
+    expect(bm?.kind).toBe("疏");
   });
 
-  it("keeps T85 御注宣演 as 敦煌 via taisho sch before zaijia", () => {
+  it("keeps T85 御注宣演 as 敦煌 via taisho sch before bulei", () => {
     expect(canonDeptFromCbetaId("T85n2733", "御注金刚般若波罗蜜经宣演")).toBe(
       "敦煌写本（敦煌出土古写经）",
     );
   });
 
-  it("exposes zaijia meta subcategories", () => {
-    const idx = loadZaijiaIndexes();
-    expect(idx.metaById.size).toBeGreaterThan(500);
-    const zm = getZaijiaMeta("X26n0551");
-    expect(zm?.sectionLabel).toBe("般若部類");
-    expect(zm?.topicLabel).toBe("般若心經");
-    expect(zm?.kind).toBe("疏");
-    expect(zaijiaFieldsForCbetaId("X26n0551")).toEqual({
-      section: "般若部類",
-      topic: "般若心經",
-      kind: "疏",
-    });
+  it("exposes bulei meta subcategories", () => {
+    const bm = getBuleiMeta("X26n0551");
+    expect(bm?.sectionLabel).toBe("般若部類");
+    expect(bm?.kind).toBe("疏");
+    const bf = buleiFieldsForCbetaId("X26n0551");
+    expect(bf?.section).toBe("般若部类");
+    expect(bf?.kind).toBe("疏");
+    expect(bf?.group).toMatch(/般若心经/);
   });
 });

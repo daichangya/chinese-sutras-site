@@ -1,6 +1,6 @@
 /**
  * 逐字/词组读音解析
- * @author jingxin
+ * @author 代长亚
  */
 import { pinyin } from "pinyin-pro";
 import { getKxDict, getPhraseDict } from "./dict";

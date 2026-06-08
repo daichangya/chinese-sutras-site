@@ -1,6 +1,6 @@
 /**
  * 拼音词典加载
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

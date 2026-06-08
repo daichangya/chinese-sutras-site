@@ -1,6 +1,6 @@
 /**
  * 审计「新编」目录：列出应迁出条目及按目标部类统计
- * @author jingxin
+ * @author 代长亚
  *
  * 用法:
  *   npm run corpus:audit-xinbian

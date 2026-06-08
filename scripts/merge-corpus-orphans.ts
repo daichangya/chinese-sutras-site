@@ -1,6 +1,6 @@
 /**
  * 合并「无 meta 的内容目录」到同 cbeta_id 的 canonical 目录
- * @author jingxin
+ * @author 代长亚
  *
  * 用法:
  *   npm run corpus:merge-orphans -- --dry-run

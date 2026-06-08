@@ -1,6 +1,6 @@
 /**
  * 语料层稳定 ID 与 pid 校验
- * @author jingxin
+ * @author 代长亚
  */
 import { v5 as uuidv5 } from "uuid";
 

@@ -1,6 +1,6 @@
 /**
  * 对比 meta.yaml 的 category 与 canonDeptFromCbetaId 规则结果
- * @author jingxin
+ * @author 代长亚
  *
  * 用法:
  *   npm run corpus:audit-category

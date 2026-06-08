@@ -1,6 +1,6 @@
 /**
  * 首页今日经句卡片 — 无尽藏式沉浸引述框
- * @author jingxin
+ * @author 代长亚
  */
 import Link from "next/link";
 
@@ -16,7 +16,7 @@ export function DailyVerseCard({
   return (
     <div
       data-testid="daily-verse-card"
-      className="share-card relative overflow-hidden rounded-2xl border border-[var(--jx-border)] bg-gradient-to-br from-[var(--jx-paper-elevated)] via-[var(--jx-paper)] to-amber-50/60 dark:from-[var(--jx-dark-surface)] dark:via-[var(--jx-dark-bg)] dark:to-stone-950 p-8 md:p-10"
+      className="share-card relative overflow-hidden rounded-xl md:rounded-2xl border border-[var(--jx-border)] bg-gradient-to-br from-[var(--jx-paper-elevated)] via-[var(--jx-paper)] to-[rgb(139_37_0/0.04)] dark:from-[var(--jx-dark-surface)] dark:via-[var(--jx-dark-bg)] dark:to-stone-950 p-6 md:p-10"
     >
       {/* 装饰角标 */}
       <div className="absolute top-0 right-0 w-24 h-24 opacity-[0.04] dark:opacity-[0.06]">
@@ -29,8 +29,8 @@ export function DailyVerseCard({
 
       {/* 标签 */}
       <div className="flex items-center gap-2 mb-5">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wider text-amber-800/80 dark:text-amber-400/80">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-pulse" />
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wider text-[var(--jx-accent-cinnabar)]/80 dark:text-[var(--jx-gold)]/80">
+          <span className="w-1.5 h-1.5 rounded-full bg-[rgb(139_37_0/0.06)]0/60 animate-pulse" />
           今日经句
         </span>
         <span className="text-xs text-[var(--jx-muted-label)]">
@@ -68,7 +68,7 @@ export function DailyVerseCard({
       {/* 操作 */}
       <Link
         href="/verse/today"
-        className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-amber-900/90 underline-offset-4 hover:underline dark:text-amber-400/90 transition-colors"
+        className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-[var(--jx-accent-cinnabar)]/90 underline-offset-4 hover:underline dark:text-[var(--jx-gold)]/90 transition-colors"
       >
         分享今日经句
         <span className="text-lg leading-none">→</span>

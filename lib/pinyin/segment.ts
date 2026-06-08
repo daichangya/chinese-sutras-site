@@ -1,6 +1,6 @@
 /**
  * 段落拼音分词
- * @author jingxin
+ * @author 代长亚
  */
 import { createHash } from "crypto";
 import { resolveHanSpan, readingsFromSidecar } from "./resolve";

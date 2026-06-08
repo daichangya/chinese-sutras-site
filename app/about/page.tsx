@@ -1,26 +1,25 @@
 /**
- * 关于页：统一 jx-page / jx-section-label 视觉
- * @author jingxin
+ * 关于页
+ * @author 代长亚
  */
 import Link from "next/link";
+import { DiscoveryLayout } from "@/components/layout/discovery-layout";
+import { SectionHeader } from "@/components/ui/section-header";
+import { brandAboutIntro } from "@/lib/brand";
 
 export default function AboutPage() {
   return (
-    <div className="jx-page">
-      <header className="mb-10">
-        <p className="jx-section-label">关于</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">关于静心</h1>
-      </header>
+    <DiscoveryLayout label="关于" title="关于静心">
       <div className="prose-jx max-w-none text-base">
         <p>
-          静心（jingxin）是一个现代化的佛经阅读与理解平台，帮助普通读者与初学者更容易读懂经典，而非替代专业佛学研究或法师开示。
+          {brandAboutIntro()}
         </p>
-        <p className="jx-section-label mt-10 mb-3">经文版权</p>
+        <SectionHeader label="经文版权" className="mt-10" />
         <p>
           本站经文底本来自 CBETA 电子佛典集成（中华电子佛典协会）。使用与转载请遵循{" "}
           <a
             href="https://www.cbeta.org/copyright.php"
-            className="text-amber-900 underline underline-offset-2 dark:text-amber-400"
+            className="text-[var(--jx-accent-cinnabar)] underline underline-offset-2 dark:text-[var(--jx-gold)]"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -28,7 +27,7 @@ export default function AboutPage() {
           </a>
           。
         </p>
-        <p className="jx-section-label mt-10 mb-3">AI 说明</p>
+        <SectionHeader label="AI 说明" className="mt-10" />
         <p>白话译文与划选解释由 AI 辅助生成，可能存在偏差，仅供学习参考。</p>
       </div>
       <p className="mt-12 text-center">
@@ -36,6 +35,6 @@ export default function AboutPage() {
           返回首页
         </Link>
       </p>
-    </div>
+    </DiscoveryLayout>
   );
 }

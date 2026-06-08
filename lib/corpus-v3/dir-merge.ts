@@ -1,6 +1,6 @@
 /**
  * 语料目录合并（目标已存在时递归并入，不覆盖已有文件）
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

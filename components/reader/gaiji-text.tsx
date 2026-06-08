@@ -1,6 +1,6 @@
 /**
  * 缺字 fallback 渲染
- * @author jingxin
+ * @author 代长亚
  */
 import type { ReactNode } from "react";
 
@@ -19,7 +19,7 @@ export function GaijiText({ text }: { text: string }) {
     if (part) nodes.push(<span key={`p-${i}`}>{part}</span>);
     if (matches[i]) {
       nodes.push(
-        <span key={`g-${i}`} className="gaiji-fallback" title="缺字">
+        <span key={`g-${i}`} className="gaiji-fallback" title="缺字" role="note" aria-label="此处有缺字">
           〔缺〕
         </span>,
       );

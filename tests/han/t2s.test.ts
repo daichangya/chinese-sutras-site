@@ -83,6 +83,14 @@ describe("han cli fallback", () => {
     expect(backend).toBe("js");
     expect(text).toBe("观自在");
   });
+
+  it("falls back to js when cli lacks -d dictionary flag", () => {
+    vi.spyOn(cliBackend, "isCliAvailable").mockReturnValue(true);
+    vi.spyOn(cliBackend, "isCliDictSupported").mockReturnValue(false);
+    const { text, backend } = t2s("目乾連", { backend: "auto" });
+    expect(backend).toBe("js");
+    expect(text).toBe("目乾连");
+  });
 });
 
 describe("convertReadableMarkdown", () => {

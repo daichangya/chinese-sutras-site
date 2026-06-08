@@ -1,9 +1,9 @@
 /**
  * 演示数据：从语料库导入并填充心经示例白话
- * @author jingxin
+ * @author 代长亚
  */
 import { execSync } from "child_process";
-import { closeDb } from "@/lib/db";
+import { closeDb } from "@/lib/db/sqlite";
 
 // V2：直接生成心经（T08n0251）语料并导入数据库
 console.log("Generating xinjing corpus V2 from CBETA XML…");

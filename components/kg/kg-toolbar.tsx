@@ -1,22 +1,18 @@
 /**
  * 知识图谱顶部主搜索工具栏
- * @author jingxin
+ * @author 代长亚
  */
 "use client";
 
 import { TYPE_LABELS } from "@/lib/kg/labels";
 import { Input } from "@/components/ui/input";
 
-const ENTITY_TYPES = [
-  { value: "", label: "全部类型" },
-  ...Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label })),
-];
-
 export function KgToolbar({
   query,
   onQueryChange,
   entityType,
   onEntityTypeChange,
+  entityCounts,
   depth,
   onDepthChange,
   onSearch,
@@ -26,11 +22,19 @@ export function KgToolbar({
   onQueryChange: (q: string) => void;
   entityType: string;
   onEntityTypeChange: (t: string) => void;
+  entityCounts?: Record<string, number>;
   depth: number;
   onDepthChange: (d: number) => void;
   onSearch: () => void;
   loading?: boolean;
 }) {
+  const typeOptions = [{ value: "", label: "全部类型" }];
+  for (const [value, label] of Object.entries(TYPE_LABELS)) {
+    if (entityCounts && Object.keys(entityCounts).length > 0 && (entityCounts[value] ?? 0) <= 0) {
+      continue;
+    }
+    typeOptions.push({ value, label });
+  }
   return (
     <form
       className="mb-3 flex flex-col gap-3 rounded-xl border border-[var(--jx-border)] bg-[var(--jx-paper-elevated)] px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center"
@@ -55,7 +59,7 @@ export function KgToolbar({
           className="jx-input shrink-0 text-sm sm:w-28"
           aria-label="实体类型筛选"
         >
-          {ENTITY_TYPES.map((t) => (
+          {typeOptions.map((t) => (
             <option key={t.value || "all"} value={t.value}>
               {t.label}
             </option>

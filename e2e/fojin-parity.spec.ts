@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 /**
  * FoJin 对标新路由 smoke 矩阵
- * @author jingxin
+ * @author 代长亚
  */
 test.describe("fojin parity routes", () => {
   test("homepage portal shows hero, stats and feature grid", async ({ page }) => {
@@ -26,17 +26,20 @@ test.describe("fojin parity routes", () => {
     await expect(page.getByTestId("search-facet-sidebar")).toBeVisible({ timeout: 15000 });
   });
 
-  test("reader page shows icon toolbar", async ({ page }) => {
+  test("reader page shows labeled toolbar", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/sutra/chang-a-han-jing", { waitUntil: "domcontentloaded" });
     const toolbar = page.getByTestId("reader-toolbar");
     const notFound = page.getByRole("heading", { name: /未找到|404/i });
-    const hasToolbar = await toolbar.isVisible().catch(() => false);
-    const is404 = await notFound.isVisible().catch(() => false);
-    if (hasToolbar) {
+    await expect(toolbar.or(notFound)).toBeVisible({ timeout: 15000 });
+    if (await toolbar.isVisible()) {
       await expect(toolbar).toBeVisible();
-      await expect(page.getByTestId("reader-tool-toc")).toBeVisible();
+      await expect(page.getByTestId("reader-comprehension-panel")).toBeVisible();
+      await expect(page.getByTestId("reader-settings-menu")).toBeVisible();
+      await expect(page.getByTestId("reader-tool-toc")).toBeHidden();
+      await expect(page.getByTestId("reader-tool-comprehension")).toBeHidden();
     } else {
-      expect(is404).toBe(true);
+      await expect(notFound).toBeVisible();
     }
   });
 
@@ -57,6 +60,17 @@ test.describe("fojin parity routes", () => {
     ).toBeVisible({ timeout: 15000 });
   });
 
+  test("dictionary foguang renders html when source imported", async ({ page }) => {
+    await page.goto("/dictionary?q=䞋&source=foguang", { waitUntil: "domcontentloaded" });
+    const group = page.getByTestId("dict-group-foguang");
+    const visible = await group.isVisible({ timeout: 8000 }).catch(() => false);
+    if (!visible) {
+      test.skip(true, "foguang not in SQLite — run dict:import:mdict && dict:import:sqlite");
+      return;
+    }
+    await expect(page.getByTestId("dict-definition-html").first()).toBeVisible();
+  });
+
   test("kg page renders graph or empty fallback", async ({ page }) => {
     test.setTimeout(60_000);
     await page.goto("/kg", { waitUntil: "domcontentloaded" });
@@ -66,14 +80,24 @@ test.describe("fojin parity routes", () => {
   });
 
   test("places page renders map area or empty fallback", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto("/places", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "佛教地理" })).toBeVisible({ timeout: 15000 });
-    await expect(
-      page
-        .getByTestId("places-map-layout")
-        .or(page.getByText("暂无地理坐标数据"))
-        .or(page.getByText("暂无地理坐标数据。请联系管理员导入地名与坐标。")),
-    ).toBeVisible({ timeout: 15000 });
+    const mapLayout = page.getByTestId("places-map-layout");
+    const empty = page.getByText(/暂无地理坐标数据/);
+    await expect(mapLayout.or(empty)).toBeVisible({ timeout: 30000 });
+    if (await mapLayout.isVisible().catch(() => false)) {
+      await expect(page.getByTestId("places-stats-badge")).toBeVisible({ timeout: 15000 });
+      await expect(page.getByTestId("places-search-input")).toBeVisible();
+      await expect(page.getByTestId("places-map-canvas")).toBeVisible({ timeout: 30000 });
+      const mapCanvas = page.locator(".maplibregl-canvas").first();
+      await expect(mapCanvas).toBeVisible({ timeout: 30000 });
+      const box = await mapCanvas.boundingBox();
+      expect(box?.width ?? 0).toBeGreaterThan(0);
+      expect(box?.height ?? 0).toBeGreaterThan(0);
+      const badgeText = await page.getByTestId("places-stats-badge").innerText();
+      expect(badgeText).toMatch(/\d+/);
+    }
   });
 
   test("chat page shows input and can send mock message", async ({ page }) => {

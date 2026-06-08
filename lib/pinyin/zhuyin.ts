@@ -1,6 +1,6 @@
 /**
  * 注音符号（Bopomofo）转汉语拼音
- * @author jingxin
+ * @author 代长亚
  */
 
 const INITIALS = new Set("ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ");

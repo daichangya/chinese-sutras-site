@@ -1,7 +1,9 @@
 /**
  * 抄经字符覆盖率检查
- * @author jingxin
+ * @author 代长亚
  */
+import type { CopybookFontChoice } from "@/components/copybook/grid-renderer";
+import { charMatchesFont, listMissingChars } from "@/components/copybook/font-char-match";
 import { COPYBOOK_CHAR_SETS } from "@/lib/copybook/char-sets";
 
 export type CoverageResult = {
@@ -21,16 +23,13 @@ export function checkCoverage(text: string, fontChoice: string): CoverageResult 
     return { total, found: 0, missing: chars, fontChoice };
   }
 
-  const missing: string[] = [];
+  const choice = fontChoice as CopybookFontChoice;
   let found = 0;
   for (const c of chars) {
-    if (charSet.has(c)) {
-      found++;
-    } else {
-      missing.push(c);
-    }
+    if (charMatchesFont(c, choice, charSet)) found++;
   }
 
+  const missing = listMissingChars(text, choice);
   return { total, found, missing, fontChoice };
 }
 

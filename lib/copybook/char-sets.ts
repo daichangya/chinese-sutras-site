@@ -1,7 +1,7 @@
 /**
  * 抄经字体字符集合 — 用于覆盖率检查
  * 数据提取自 Selftrace/frontend/stele_chars.js
- * @author jingxin
+ * @author 代长亚
  */
 
 import charSetsData from "./char-sets-data.json";

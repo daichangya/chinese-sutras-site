@@ -1,12 +1,12 @@
 /**
  * 人物详情展示
- * @author jingxin
+ * @author 代长亚
  */
 import Link from "next/link";
 import { SectionHeader } from "@/components/ui/section-header";
-import { personDisplayDates, personDynasty, personSchool } from "@/lib/kg/display";
+import { entityBioText, personDisplayDates, personDynasty, personSchool } from "@/lib/kg/display";
 import { labelPredicate, labelProperty, labelType, PREDICATE_ORDER } from "@/lib/kg/labels";
-import { entityIdToSlug, personPath } from "@/lib/kg/slug";
+import { entityDetailPath, personPath } from "@/lib/kg/slug";
 
 export function PersonDetail({
   person,
@@ -24,12 +24,14 @@ export function PersonDetail({
     otherId: string;
     otherName: string;
     otherType: string;
+    otherSutraSlug?: string | null;
   }>;
   sutras: Array<{ cbetaId: string; title: string; slug: string }>;
 }) {
   const dates = personDisplayDates(person.properties);
   const dynasty = personDynasty(person.properties);
   const school = personSchool(person.properties);
+  const bio = entityBioText(person.properties);
 
   const grouped = new Map<string, typeof relations>();
   for (const r of relations) {
@@ -43,12 +45,10 @@ export function PersonDetail({
     .slice(0, 8);
 
   function otherLink(r: (typeof relations)[0]) {
-    if (r.otherType === "person") return personPath(entityIdToSlug(r.otherId));
-    if (r.otherType === "text") return `/search?q=${encodeURIComponent(r.otherName)}`;
-    if (r.otherType === "place" || r.otherType === "monastery") {
-      return `/places?focus=${encodeURIComponent(entityIdToSlug(r.otherId))}`;
-    }
-    return `/kg?slug=${encodeURIComponent(entityIdToSlug(r.otherId))}`;
+    if (r.otherType === "person") return personPath(r.otherId);
+    return entityDetailPath(r.otherId, r.otherType, {
+      sutraSlug: r.otherSutraSlug ?? null,
+    });
   }
 
   return (
@@ -57,6 +57,13 @@ export function PersonDetail({
         <p className="mb-6 text-sm text-[var(--muted)]">
           {[dynasty, school, dates.replace(/[（）]/g, "")].filter(Boolean).join(" · ")}
         </p>
+      )}
+
+      {bio && (
+        <section className="mb-8" data-testid="person-bio">
+          <SectionHeader label="简介" />
+          <p className="text-sm leading-relaxed text-[var(--foreground)]">{bio}</p>
+        </section>
       )}
 
       {propEntries.length > 0 && (

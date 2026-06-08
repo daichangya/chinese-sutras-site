@@ -77,7 +77,7 @@ Create `lib/copybook/char-sets.ts`:
 /**
  * 抄经字体字符集合 — 用于覆盖率检查
  * 数据提取自 Selftrace/frontend/stele_chars.js
- * @author jingxin
+ * @author 代长亚
  */
 
 import charSetsData from "./char-sets-data.json";
@@ -137,7 +137,7 @@ Create `tests/copybook/char-coverage.test.ts`:
 ```typescript
 /**
  * 字符覆盖率测试
- * @author jingxin
+ * @author 代长亚
  */
 import { describe, expect, it } from "vitest";
 import { checkCoverage, type CoverageResult } from "@/components/copybook/char-coverage";
@@ -183,7 +183,7 @@ Create `components/copybook/char-coverage.ts`:
 ```typescript
 /**
  * 抄经字符覆盖率检查
- * @author jingxin
+ * @author 代长亚
  */
 import { COPYBOOK_CHAR_SETS } from "@/lib/copybook/char-sets";
 
@@ -250,7 +250,7 @@ Add to `tests/copybook/font-loader.test.ts`:
 ```typescript
 /**
  * 字体加载测试
- * @author jingxin
+ * @author 代长亚
  */
 import { describe, expect, it } from "vitest";
 import { FONT_CONFIG, type CopybookFontChoice } from "@/components/copybook/use-copybook-font";
@@ -287,7 +287,7 @@ Replace `components/copybook/use-copybook-font.ts`:
 
 /**
  * 抄经多字体按需加载
- * @author jingxin
+ * @author 代长亚
  */
 import { useEffect, useState } from "react";
 
@@ -431,7 +431,7 @@ Replace `components/copybook/grid-renderer.ts`:
 ```typescript
 /**
  * 抄经字帖 Canvas 格子与文字绘制
- * @author jingxin
+ * @author 代长亚
  */
 
 export type GridType = "mi" | "tian" | "jiu" | "none";
@@ -687,7 +687,7 @@ Revised Step 3 - Replace `components/copybook/grid-renderer.ts`:
 ```typescript
 /**
  * 抄经字帖 Canvas 格子与文字绘制
- * @author jingxin
+ * @author 代长亚
  */
 
 export type GridType = "mi" | "tian" | "jiu" | "none";
@@ -935,7 +935,7 @@ The existing tests reference `CopybookRenderConfig` without `missingChars`. Upda
 ```typescript
 /**
  * 抄经格子渲染测试
- * @author jingxin
+ * @author 代长亚
  */
 import { describe, expect, it } from "vitest";
 import {

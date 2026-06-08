@@ -1,0 +1,2 @@
+# MDict 辞典导入（npm run dict:import:mdict）
+mdict-utils>=1.3.0

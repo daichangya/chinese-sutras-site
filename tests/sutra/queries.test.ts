@@ -1,6 +1,6 @@
 /**
  * 经目 slug 解析测试
- * @author jingxin
+ * @author 代长亚
  */
 import { existsSync } from "fs";
 import { afterAll, describe, expect, it } from "vitest";

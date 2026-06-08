@@ -1,6 +1,6 @@
 /**
  * 繁体文本预处理（对齐 cbeta reader t2s_post）
- * @author jingxin
+ * @author 代长亚
  */
 
 /** 去除 CBETA 行间注释如 [1]、[a]、[*] */

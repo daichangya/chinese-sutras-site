@@ -1,5 +1,5 @@
 /**
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import os from "os";

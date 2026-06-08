@@ -2,7 +2,7 @@
 
 /**
  * 抄经页客户端壳层
- * @author jingxin
+ * @author 代长亚
  */
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -71,9 +71,9 @@ export function CopybookShell({
   );
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <header className="mb-8 border-b border-[var(--jx-border)] pb-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="jx-reader mx-auto px-3 md:px-4 py-6 md:py-8">
+      <header className="mb-6 md:mb-8 border-b border-[var(--jx-border)] pb-6">
+        <div className="flex flex-wrap items-start justify-between gap-3 md:gap-4">
           <div>
             <p className="mb-1 text-xs tracking-wider text-[var(--jx-muted-label)]">抄经字帖</p>
             <h1 className="text-2xl font-semibold text-[var(--foreground)]">{sutra.title}</h1>
@@ -98,7 +98,7 @@ export function CopybookShell({
                 href={`/sutra/${sutra.slug}/copybook?chapter=${seq}`}
                 className={`rounded-full px-3 py-1 text-xs ${
                   seq === currentChapter
-                    ? "bg-amber-800 text-white"
+                    ? "bg-[var(--jx-accent-cinnabar)] text-white dark:bg-[var(--jx-accent-cinnabar)]"
                     : "border border-[var(--jx-border)] text-[var(--muted)]"
                 }`}
               >
@@ -109,7 +109,7 @@ export function CopybookShell({
         )}
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-6 lg:gap-8">
         <CopybookConfig
           sutraTitle={sutra.title}
           paragraphs={paragraphs}

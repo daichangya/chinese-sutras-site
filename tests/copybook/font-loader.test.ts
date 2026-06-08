@@ -1,6 +1,6 @@
 /**
  * 字体加载测试
- * @author jingxin
+ * @author 代长亚
  */
 import { describe, expect, it } from "vitest";
 import { FONT_CONFIG } from "@/components/copybook/use-copybook-font";

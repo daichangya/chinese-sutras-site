@@ -1,6 +1,6 @@
 /**
  * 知识图谱时间轴（简化版）
- * @author jingxin
+ * @author 代长亚
  */
 "use client";
 

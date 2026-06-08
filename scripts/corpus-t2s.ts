@@ -1,6 +1,6 @@
 /**
  * 批量将 corpus 原文转为简体 Markdown
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

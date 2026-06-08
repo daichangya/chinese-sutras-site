@@ -1,8 +1,9 @@
 /**
  * 今日经句分享 OG 图
- * @author jingxin
+ * @author 代长亚
  */
 import { ImageResponse } from "next/og";
+import { brandOgSubtitle } from "@/lib/brand";
 import { getSqlite } from "@/lib/db";
 import { getDailyVerse } from "@/lib/sutra/queries";
 
@@ -39,7 +40,7 @@ export default async function Image() {
           今日经句 · 静心
         </div>
         <div style={{ fontSize: 42, lineHeight: 1.5, maxWidth: 1000 }}>{text}</div>
-        <div style={{ fontSize: 22, marginTop: 48, color: "#78716c" }}>jingxin — 让佛经更容易读懂</div>
+        <div style={{ fontSize: 22, marginTop: 48, color: "#78716c" }}>{brandOgSubtitle()}</div>
       </div>
     ),
     { ...size },

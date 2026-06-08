@@ -1,6 +1,6 @@
 /**
  * jingxin 数据模型 — paragraph 为系统中枢
- * @author jingxin
+ * @author 代长亚
  */
 import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
@@ -30,19 +30,11 @@ export const paragraph = sqliteTable(
     sutraId: text("sutra_id")
       .notNull()
       .references(() => sutra.id),
-    /** CBETA anchor span（用于 canonical_id 与可读定位） */
-    startRef: text("start_ref"),
-    endRef: text("end_ref"),
-    /** 仅当前生成版本有效的排序/调试字段 */
-    parserPid: text("parser_pid"),
-    /** 内容校验（不参与身份） */
-    contentHash: text("content_hash"),
     /** 所属卷序号（0 = 全文单卷） */
     juanSeq: integer("juan_seq").notNull().default(0),
     /** 顺序字段：用于阅读时稳定排序 */
     seq: integer("seq").notNull(),
-    text: text("text").notNull(),
-    /** 白话译文（保留，将来导入） */
+    /** 白话译文（保留，将来导入；正文在语料 MD） */
     colloquial: text("colloquial"),
     commentary: text("commentary"),
     lecture: text("lecture"),
@@ -109,3 +101,37 @@ export const userBookmark = sqliteTable("user_bookmark", {
   paragraphId: text("paragraph_id"),
   createdAt: integer("created_at").notNull(),
 });
+
+/** 分享记录 */
+export const share = sqliteTable("share", {
+  id: text("id").primaryKey(),
+  sutraId: text("sutra_id").notNull(),
+  paragraphId: text("paragraph_id").notNull(),
+  /** 分享码（短 ID，用于 URL） */
+  shareCode: text("share_code").notNull().unique(),
+  /** 截取的文字片段 */
+  excerpt: text("excerpt").notNull(),
+  createdAt: integer("created_at")
+    .notNull()
+    .default(0),
+  viewCount: integer("view_count").notNull().default(0),
+});
+
+/** 服务端书签（支持段落级收藏 + 多端同步） */
+export const bookmark = sqliteTable(
+  "bookmarks",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id"),
+    sutraId: text("sutra_id").notNull(),
+    paragraphIndex: integer("paragraph_index").notNull(),
+    content: text("content"),
+    createdAt: integer("created_at")
+      .notNull()
+      .default(0),
+    updatedAt: integer("updated_at")
+      .notNull()
+      .default(0),
+  },
+  (t) => [index("bookmark_sutra_user_idx").on(t.sutraId, t.userId)],
+);

@@ -1,6 +1,6 @@
 /**
  * 本地收藏（localStorage）
- * @author jingxin
+ * @author 代长亚
  */
 export type BookmarkEntry = {
   id: string;

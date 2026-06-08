@@ -1,15 +1,28 @@
 /**
  * 知识图谱三栏探索器
- * @author jingxin
+ * @author 代长亚
  */
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { KgControls } from "@/components/kg/kg-controls";
 import { KgCuratedChips } from "@/components/kg/kg-curated-chips";
 import { KgEntityCard, type KgEntityDetail } from "@/components/kg/kg-entity-card";
-import { KgForceGraph, mergeGraphData } from "@/components/kg/kg-force-graph";
+import { mergeGraphData } from "@/lib/kg/merge-graph";
+
+const KgForceGraph = dynamic(
+  () => import("@/components/kg/kg-force-graph").then((m) => m.KgForceGraph),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[320px] items-center justify-center text-sm text-[var(--muted)]">
+        加载图谱…
+      </div>
+    ),
+  },
+);
 import { KgLegend } from "@/components/kg/kg-legend";
 import { KgMentionsPanel } from "@/components/kg/kg-mentions-panel";
 import { KgSearchPanel, type KgSearchResult } from "@/components/kg/kg-search-panel";
@@ -22,6 +35,18 @@ import type { KgGraphEdge, KgGraphNode } from "@/lib/kg/types";
 type MobileTab = "search" | "graph" | "detail";
 
 const DEFAULT_PREDS = ["translated", "teacher_of", "composed_in"];
+const SCHOOL_GRAPH_PREDS = ["member_of_school", "associated_with"];
+const CONCEPT_GRAPH_PREDS = ["associated_with"];
+
+function graphPredicatesForEntityType(entityType: string, current: string[]): string[] {
+  if (entityType === "school") {
+    return [...new Set([...current, ...SCHOOL_GRAPH_PREDS])];
+  }
+  if (entityType === "concept") {
+    return [...new Set([...current, ...CONCEPT_GRAPH_PREDS])];
+  }
+  return current;
+}
 
 export function KgExplorer() {
   const router = useRouter();
@@ -39,6 +64,7 @@ export function KgExplorer() {
 
   const [searchResults, setSearchResults] = useState<KgSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchRelaxedType, setSearchRelaxedType] = useState(false);
   const [graphNodes, setGraphNodes] = useState<KgGraphNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<KgGraphEdge[]>([]);
   const [graphTruncated, setGraphTruncated] = useState(false);
@@ -82,25 +108,37 @@ export function KgExplorer() {
     [query, entityType, selectedEntityId, depth, predicates, router],
   );
 
+  const runSearchWith = useCallback(
+    async (opts: { q: string; type?: string }) => {
+      setSearchLoading(true);
+      try {
+        const params = new URLSearchParams({ q: opts.q, limit: "20" });
+        if (opts.type) params.set("type", opts.type);
+        const res = await fetch(`/api/kg/search?${params}`);
+        const data = (await res.json()) as {
+          results: KgSearchResult[];
+          relaxedType?: boolean;
+        };
+        setSearchResults(data.results ?? []);
+        setSearchRelaxedType(!!data.relaxedType);
+        return data.results ?? [];
+      } catch {
+        setSearchResults([]);
+        setSearchRelaxedType(false);
+        return [];
+      } finally {
+        setSearchLoading(false);
+      }
+    },
+    [],
+  );
+
   const runSearch = useCallback(async () => {
-    setSearchLoading(true);
-    try {
-      const params = new URLSearchParams({ q: query, limit: "20" });
-      if (entityType) params.set("type", entityType);
-      const res = await fetch(`/api/kg/search?${params}`);
-      const data = (await res.json()) as { results: KgSearchResult[] };
-      setSearchResults(data.results ?? []);
-      return data.results ?? [];
-    } catch {
-      setSearchResults([]);
-      return [];
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [query, entityType]);
+    return runSearchWith({ q: query, type: entityType || undefined });
+  }, [query, entityType, runSearchWith]);
 
   const loadGraph = useCallback(
-    async (centerSlugOrId: string) => {
+    async (centerSlugOrId: string, typeHint?: string, relsOverride?: string[]) => {
       setGraphLoading(true);
       setTruncationDismissed(false);
       try {
@@ -109,7 +147,9 @@ export function KgExplorer() {
           depth: String(depth),
           limit: "80",
         });
-        if (predicates.length) params.set("rels", predicates.join(","));
+        if (typeHint) params.set("entityType", typeHint);
+        const rels = relsOverride ?? predicates;
+        if (rels.length) params.set("rels", rels.join(","));
         const res = await fetch(`/api/kg/graph?${params}`);
         const data = (await res.json()) as {
           nodes: KgGraphNode[];
@@ -132,12 +172,15 @@ export function KgExplorer() {
     [depth, predicates],
   );
 
-  const loadEntity = useCallback(async (idOrSlug: string) => {
+  const loadEntity = useCallback(async (idOrSlug: string, typeHint?: string) => {
     setEntityLoading(true);
     try {
       const params = new URLSearchParams();
       if (idOrSlug.startsWith("kg:")) params.set("id", idOrSlug);
-      else params.set("slug", idOrSlug);
+      else {
+        params.set("slug", idOrSlug);
+        if (typeHint) params.set("entityType", typeHint);
+      }
       const res = await fetch(`/api/kg/entity?${params}`);
       if (!res.ok) {
         setEntity(null);
@@ -159,12 +202,18 @@ export function KgExplorer() {
     (r: KgSearchResult) => {
       setSelectedEntityId(r.id);
       setQuery(r.name_zh);
-      syncUrl({ q: r.name_zh, slug: r.slug, type: r.entity_type, entityId: r.id });
-      void loadGraph(r.slug);
-      void loadEntity(r.slug);
+      const nextPreds = graphPredicatesForEntityType(r.entity_type, predicates);
+      if (nextPreds.length !== predicates.length) {
+        setPredicates(nextPreds);
+        syncUrl({ q: r.name_zh, slug: r.slug, type: r.entity_type, entityId: r.id, rels: nextPreds });
+      } else {
+        syncUrl({ q: r.name_zh, slug: r.slug, type: r.entity_type, entityId: r.id });
+      }
+      void loadGraph(r.id, r.entity_type, nextPreds);
+      void loadEntity(r.id);
       setMobileTab("graph");
     },
-    [loadGraph, loadEntity, syncUrl],
+    [loadGraph, loadEntity, syncUrl, predicates],
   );
 
   const selectBySlug = useCallback(
@@ -224,6 +273,13 @@ export function KgExplorer() {
   }, []);
 
   useEffect(() => {
+    if (!stats?.entityCounts || !entityType) return;
+    if ((stats.entityCounts[entityType] ?? 0) > 0) return;
+    setEntityType("");
+    syncUrl({ type: "" });
+  }, [stats?.entityCounts, entityType, syncUrl]);
+
+  useEffect(() => {
     if (!showTimeline) return;
     setTimelineLoading(true);
     void fetch("/api/kg/timeline")
@@ -238,9 +294,10 @@ export function KgExplorer() {
     initialLoadDone.current = true;
 
     const slug = searchParams.get("slug");
+    const type = searchParams.get("type") || undefined;
     if (slug) {
-      void loadGraph(slug);
-      void loadEntity(slug);
+      void loadGraph(slug, type);
+      void loadEntity(slug, type);
       void runSearch();
       return;
     }
@@ -256,10 +313,14 @@ export function KgExplorer() {
   }, [depth, predicates]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pickCurated = (label: string, type: string) => {
+    const typeFilter =
+      stats?.entityCounts && (stats.entityCounts[type] ?? 0) > 0 ? type : undefined;
     setQuery(label);
-    setEntityType(type);
-    syncUrl({ q: label, type });
-    void runSearch();
+    setEntityType(typeFilter ?? "");
+    syncUrl({ q: label, type: typeFilter ?? "" });
+    void runSearchWith({ q: label, type: typeFilter }).then((results) => {
+      if (results.length > 0) selectEntity(results[0]!);
+    });
   };
 
   const handleSearch = () => {
@@ -314,6 +375,7 @@ export function KgExplorer() {
           query={query}
           onQueryChange={setQuery}
           entityType={entityType}
+          entityCounts={stats?.entityCounts}
           onEntityTypeChange={(t) => {
             setEntityType(t);
             syncUrl({ type: t });
@@ -361,12 +423,13 @@ export function KgExplorer() {
         data-testid="kg-explorer-layout"
       >
         <aside
-          className={`border-[var(--jx-border)] lg:border-r ${mobileTab !== "search" ? "hidden lg:block" : ""}`}
+          className={`lg:bg-[var(--jx-sidebar-bg)] ${mobileTab !== "search" ? "hidden lg:block" : ""}`}
         >
           <KgSearchPanel
             results={searchResults}
             loading={searchLoading}
             query={query}
+            relaxedType={searchRelaxedType}
             selectedEntityId={selectedEntityId}
             onSelect={selectEntity}
           />
@@ -422,9 +485,9 @@ export function KgExplorer() {
         </main>
 
         <aside
-          className={`border-[var(--jx-border)] lg:border-l ${mobileTab !== "detail" ? "hidden lg:block" : ""}`}
+          className={`lg:bg-[var(--jx-paper-deep)] ${mobileTab !== "detail" ? "hidden lg:block" : ""}`}
         >
-          <p className="jx-section-label border-b border-[var(--jx-border)] px-4 py-3">实体说明</p>
+          <p className="jx-section-label border-b border-[var(--jx-border)]/40 px-4 py-3">实体说明</p>
           <KgEntityCard entity={entity} loading={entityLoading} />
         </aside>
       </div>

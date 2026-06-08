@@ -1,6 +1,6 @@
 /**
  * 序文剥离
- * @author jingxin
+ * @author 代长亚
  */
 import { describe, expect, it } from "vitest";
 import { filterPrefaceParagraphs } from "@/lib/cbeta/preface-filter";

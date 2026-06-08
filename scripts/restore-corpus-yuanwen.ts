@@ -1,6 +1,6 @@
 /**
  * 从 CBETA XML 批量恢复 corpus 原文/（繁体）与 _index
- * @author jingxin
+ * @author 代长亚
  */
 import { spawn } from "node:child_process";
 import fs from "fs";

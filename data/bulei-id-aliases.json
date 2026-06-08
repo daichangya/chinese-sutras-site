@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "generated_at": "2026-06-03T05:36:30.229Z",
+  "stats": {
+    "xml_total": 5005,
+    "exact_index": 4892,
+    "resolved_non_exact": 124,
+    "inferred": 0,
+    "alias_candidates": 0
+  },
+  "aliases": []
+}

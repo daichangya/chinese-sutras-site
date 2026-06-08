@@ -1,6 +1,6 @@
 /**
  * AI 黄金集回归（Mock 模式，合并门禁）
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

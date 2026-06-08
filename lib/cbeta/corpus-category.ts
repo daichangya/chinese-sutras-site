@@ -1,13 +1,12 @@
 /**
  * 语料库顶层分类（统一部类，不再混用「大正藏」与「般若部」）
  * 分类规则对齐 CBETA 部类目录 + 用户给定 23 类
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
 import { seriesCodeFromCbetaId, CBETA_SERIES_LABELS } from "./series-label";
-import { getZaijiaCategoryIndex, resetZaijiaCategoryIndexCache } from "./zaijia-category";
-
+import { getBuleiCategory, resetBuleiCatalogCache } from "./bulei-catalog";
 /** 语料顶层目录名（与产品分类一致） */
 export const CORPUS_CATEGORIES = [
   "宗教（总类 / 总论）",
@@ -139,7 +138,7 @@ const TAISHO_SECTION_TO_CATEGORY: Record<string, CorpusCategory> = {
   唯识宗: "瑜伽（唯识宗 / 法相宗）",
 };
 
-/** 始终按藏代码归类的系列（不受 zaijia 覆盖） */
+/** 始终按藏代码归类的系列（不受 bulei 覆盖） */
 const FIXED_SERIES_TO_CATEGORY: Record<string, CorpusCategory> = {
   D: "国图善本（扩展类目）",
   GA: "史传（僧传、寺志、编年史料）",
@@ -148,7 +147,7 @@ const FIXED_SERIES_TO_CATEGORY: Record<string, CorpusCategory> = {
   ZS: "史传（僧传、寺志、编年史料）",
 };
 
-/** 无 zaijia/题名命中时的藏代码兜底 */
+/** 无 bulei/题名命中时的藏代码兜底 */
 const SERIES_FALLBACK_CATEGORY: Record<string, CorpusCategory> = {
   N: "阿含（小乘根本经典）",
   B: "新编（新增及近现代文献）",
@@ -216,7 +215,7 @@ const XUZANG_SECTION_TO_CATEGORY: Record<string, CorpusCategory> = {
 const LUNJI_TITLE_RE =
   /(?:疏|鈔|钞|註|注|釋|義|解|論|發隱|幽贊|會釋|義疏|疏鈔|解義|科文|章義|纂要|合論|別記|别记|釋義|鈔演|直解|略疏|要解|解義|擊節|击节|節錄|节录)/u;
 
-/** 题名主题推断（zaijia 未收录的 X/R/Z 等） */
+/** 题名主题推断（bulei 未收录的 X/R/Z 等） */
 export function categoryFromTitle(title: string): CorpusCategory | null {
   const t = title.trim();
   if (!t) return null;
@@ -296,12 +295,12 @@ const AUX_SCH_SERIES = new Set([
   "Z",
 ]);
 
-/** 印度撰述段：不批量卷域注册，经目靠题名/zaijia */
+/** 印度撰述段：不批量卷域注册，经目靠题名/bulei */
 const XUZANG_SKIP_BULK_SECTION = /印度撰述/;
 
 /**
  * 规范为 T01n0001 / T08n0236a / J31nB269（勿对整串 toUpperCase，否则 n 会变成 N）
- * @author jingxin
+ * @author 代长亚
  */
 export function normalizeCbetaId(cbetaId: string): string {
   const trimmed = cbetaId.trim();
@@ -744,12 +743,12 @@ export function resetTaishoCategoryIndexCache(): void {
   taishoIndex = null;
   xuzangIndex = null;
   auxiliaryIndex = null;
-  resetZaijiaCategoryIndexCache();
+  resetBuleiCatalogCache();
 }
 
 /**
  * 语料顶层目录名（唯一入口）
- * @param title 可选经名，用于 zaijia 未收录时的主题推断（X/R/Z 等）
+ * @param title 可选经名，用于部类未收录时的主题推断（X/R/Z 等）
  */
 export function canonDeptFromCbetaId(cbetaId: string, title?: string): CorpusCategory {
   const id = normalizeCbetaId(cbetaId);
@@ -759,16 +758,18 @@ export function canonDeptFromCbetaId(cbetaId: string, title?: string): CorpusCat
     return FIXED_SERIES_TO_CATEGORY[series]!;
   }
 
-  const zaijiaIndex = getZaijiaCategoryIndex();
-
   if (series === "T") {
     const vol = parseInt(id.match(/^T(\d+)n/i)?.[1] ?? "", 10);
     if (vol === 85) {
       const t85 = lookupTaishoCategory(id);
       if (t85) return t85;
     }
-    const tZaijia = zaijiaIndex.get(id);
-    if (tZaijia) return tZaijia;
+  }
+
+  const buleiCat = getBuleiCategory(id);
+  if (buleiCat) return buleiCat;
+
+  if (series === "T") {
     const hit = lookupTaishoCategory(id);
     if (hit) return hit;
   }
@@ -776,9 +777,6 @@ export function canonDeptFromCbetaId(cbetaId: string, title?: string): CorpusCat
   const xSchHit = series === "X" ? lookupXuzangCategory(id) : undefined;
   const auxSchHit =
     series && AUX_SCH_SERIES.has(series) ? lookupAuxiliaryCanonCategory(id) : undefined;
-
-  const zaijiaHit = zaijiaIndex.get(id);
-  if (zaijiaHit) return zaijiaHit;
 
   if (xSchHit) return xSchHit;
   if (auxSchHit) return auxSchHit;

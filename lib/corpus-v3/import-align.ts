@@ -1,6 +1,6 @@
 /**
  * Corpus V3 导入对齐：身份侧车 / XML + MD 正文
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

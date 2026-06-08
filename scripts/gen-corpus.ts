@@ -1,6 +1,6 @@
 /**
  * 从 CBETA TEI XML 生成 Corpus V3（文库式 Markdown，写入 chinese-sutras-md/）
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

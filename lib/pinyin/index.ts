@@ -1,6 +1,6 @@
 /**
  * 佛经汉语拼音模块
- * @author jingxin
+ * @author 代长亚
  */
 export type {
   CharReading,

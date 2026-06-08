@@ -1,6 +1,6 @@
 /**
  * CBETA 经目 → 语料顶层分类（委托 corpus-category）
- * @author jingxin
+ * @author 代长亚
  */
 export {
   canonDeptFromCbetaId,

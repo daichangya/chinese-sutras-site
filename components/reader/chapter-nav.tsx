@@ -1,6 +1,6 @@
 /**
  * 大经分卷导航
- * @author jingxin
+ * @author 代长亚
  */
 import Link from "next/link";
 
@@ -29,7 +29,7 @@ export function ChapterNav({
           href={seq === 0 ? `/sutra/${slug}` : `/sutra/${slug}?chapter=${seq}`}
           className={`rounded-md px-2.5 py-1 transition ${
             seq === current
-              ? "bg-amber-800 text-white dark:bg-amber-600"
+              ? "bg-[var(--jx-accent-cinnabar)] text-white dark:bg-[var(--jx-accent-cinnabar)]"
               : "hover:bg-stone-100 dark:hover:bg-stone-800"
           }`}
         >

@@ -1,6 +1,6 @@
 /**
  * 从 CBETA XML 仅恢复经目 原文/ 卷与 _index（不触碰白话/注释/meta）
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

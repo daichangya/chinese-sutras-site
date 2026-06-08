@@ -1,6 +1,6 @@
 /**
  * 经目目录消歧标签：物理卷号 / 会名 / 录文 / 紧凑经号（n0073b）
- * @author jingxin
+ * @author 代长亚
  */
 import { toSimplifiedLabel } from "./sutra-labels";
 

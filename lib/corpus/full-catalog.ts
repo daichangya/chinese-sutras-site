@@ -1,6 +1,6 @@
 /**
  * 全藏语料 catalog.json 读写
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

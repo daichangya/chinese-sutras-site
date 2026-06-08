@@ -1,6 +1,6 @@
 /**
  * 首页热门经目网格（无尽藏式经目卡 — 卡片化 + 部类色标）
- * @author jingxin
+ * @author 代长亚
  */
 import Link from "next/link";
 
@@ -20,7 +20,7 @@ const SLUG_HINT: Record<string, string> = {
 };
 
 const DEPT_COLOR: Record<string, string> = {
-  般若: "bg-amber-500",
+  般若: "bg-[rgb(139_37_0/0.06)]0",
   菩萨: "bg-emerald-500",
   净土: "bg-sky-500",
   法华: "bg-violet-500",
@@ -60,7 +60,7 @@ export function PopularSutraGrid({
                 {dept}
               </span>
               {/* 经名 */}
-              <span className="mt-2 text-base font-medium tracking-wide group-hover:text-amber-900 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
+              <span className="mt-2 text-base font-medium tracking-wide group-hover:text-[var(--jx-accent-cinnabar)] dark:group-hover:text-[var(--jx-gold)] transition-colors line-clamp-1">
                 {s.title}
               </span>
               {/* 元信息 */}

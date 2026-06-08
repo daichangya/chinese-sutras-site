@@ -1,6 +1,6 @@
 /**
  * CBETA TEI 结构解析：卷 / 品目 / 段落 / 偈颂（Corpus V3）
- * @author jingxin
+ * @author 代长亚
  */
 import crypto from "crypto";
 import { XMLParser } from "fast-xml-parser";

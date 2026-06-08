@@ -1,6 +1,6 @@
 /**
  * 语料库目录名 + 白话/注释/meta 转简体（不修改 原文/；简体正文请用 corpus:t2s）
- * @author jingxin
+ * @author 代长亚
  *
  * 用法:
  *   npm run corpus:simplify                    # 全量
@@ -187,11 +187,12 @@ function simplifyMeta(meta: SutraMeta): SutraMeta {
   const title = convertSegment(meta.title);
   const translator = meta.translator ? convertSegment(meta.translator) : meta.translator;
   const dynasty = meta.dynasty ? convertSegment(meta.dynasty) : meta.dynasty;
-  const zaijia = meta.zaijia
+  const bulei = meta.bulei
     ? {
-        section: meta.zaijia.section ? convertSegment(meta.zaijia.section) : undefined,
-        topic: meta.zaijia.topic ? convertSegment(meta.zaijia.topic) : undefined,
-        kind: meta.zaijia.kind,
+        ...meta.bulei,
+        section: meta.bulei.section ? convertSegment(meta.bulei.section) : meta.bulei.section,
+        group: meta.bulei.group ? convertSegment(meta.bulei.group) : meta.bulei.group,
+        path: meta.bulei.path?.map((p) => convertSegment(p)),
       }
     : undefined;
   return {
@@ -199,7 +200,7 @@ function simplifyMeta(meta: SutraMeta): SutraMeta {
     title,
     translator,
     dynasty,
-    zaijia,
+    bulei,
   };
 }
 
@@ -244,8 +245,8 @@ function runMdPhase(): { mdFiles: number; metaUpdated: number } {
       const changed =
         next.title !== meta.title ||
         next.translator !== meta.translator ||
-        next.zaijia?.section !== meta.zaijia?.section ||
-        next.zaijia?.topic !== meta.zaijia?.topic;
+        next.bulei?.section !== meta.bulei?.section ||
+        next.bulei?.group !== meta.bulei?.group;
       if (changed) {
         if (!dryRun) writeSutraMeta(metaPath, next);
         metaUpdated += 1;

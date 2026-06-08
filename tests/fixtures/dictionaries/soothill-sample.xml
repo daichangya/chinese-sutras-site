@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <text>
+    <body>
+      <entry>
+        <form>般若</form>
+        <sense><term xml:lang="san-Latn">prajñā</term>智慧，尤指空性智慧。</sense>
+      </entry>
+      <entry>
+        <form>涅槃</form>
+        <sense>寂灭、无生。</sense>
+      </entry>
+    </body>
+  </text>
+</TEI>

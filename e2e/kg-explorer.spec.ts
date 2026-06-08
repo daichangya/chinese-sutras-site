@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 /**
  * 知识图谱探索器 E2E
- * @author jingxin
+ * @author 代长亚
  */
 test.describe("kg explorer", () => {
   test("kg page shows main search on first paint", async ({ page }) => {
@@ -39,6 +39,24 @@ test.describe("kg explorer", () => {
         .or(page.getByTestId("kg-mentions-panel"))
         .or(page.getByTestId("kg-graph-empty")),
     ).toBeVisible({ timeout: 20000 });
+  });
+
+  test("type filter dropdown hides empty entity types when stats loaded", async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto("/kg", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("kg-main-search")).toBeVisible({ timeout: 15000 });
+    const select = page.getByTestId("kg-toolbar").locator("select");
+    await expect(select).toBeVisible();
+    const options = await select.locator("option").allTextContents();
+    if (options.length > 1) {
+      for (const label of ["宗派", "概念", "寺院"]) {
+        const hasType = options.some((o) => o.includes(label));
+        if (hasType) {
+          await select.selectOption({ label });
+          break;
+        }
+      }
+    }
   });
 
   test("person page uses slug URL without heuristic ids", async ({ page }) => {

@@ -1,6 +1,6 @@
 /**
  * Corpus V3 生成：XML → 文库式 Markdown 目录
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
@@ -9,7 +9,7 @@ import { canonDeptFromCbetaId, corpusDirName, dynastyFromTranslator } from "@/li
 import { parseCbetaStructure } from "@/lib/cbeta/structure";
 import { writeBlocksIndex } from "./blocks-index";
 import { DIR_BAIHUA, DIR_JIANTI_LEGACY, DIR_YUANWEN, DIR_ZHUSHI } from "./corpus-dirs";
-import { writeSutraMeta, sutraDirName, zaijiaFieldsForCbetaId } from "./meta";
+import { writeSutraMeta, buleiFieldsForCbetaId, sutraDirName } from "./meta";
 import { toSimplifiedLabel } from "./sutra-labels";
 import { resolveZwCollisionTitle } from "./zw-title";
 import {
@@ -18,6 +18,7 @@ import {
   serializeJiantiJuan,
   serializeYuanwenJuan,
 } from "./serialize";
+import { joinSutraPath } from "./paths";
 import type { GeneratedSutraLayout, SutraMeta } from "./types";
 
 export type GenerateCorpusV3Options = {
@@ -81,7 +82,7 @@ export function generateCorpusV3FromXml(opts: GenerateCorpusV3Options): Generate
     dynastyJian,
     parsed.dirDisambiguator,
   );
-  const sutraDir = path.join(opts.corpusRoot, deptDir, dirName);
+  const sutraDir = joinSutraPath(opts.corpusRoot, deptDir, dirName);
 
   if (opts.cleanStale) {
     removeDirIfExists(sutraDir);
@@ -93,7 +94,7 @@ export function generateCorpusV3FromXml(opts: GenerateCorpusV3Options): Generate
     translator: translatorJian,
     dynasty: dynastyJian,
     category: dept,
-    zaijia: zaijiaFieldsForCbetaId(parsed.cbetaId),
+    bulei: buleiFieldsForCbetaId(parsed.cbetaId),
     juanCount: parsed.juanCount,
     sourceXml: [sourceXmlRel],
     description: undefined,

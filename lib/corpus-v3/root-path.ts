@@ -1,6 +1,6 @@
 /**
  * 语料 Markdown 根目录（Corpus V3）
- * @author jingxin
+ * @author 代长亚
  */
 export const DEFAULT_CORPUS_DIR = "chinese-sutras-md";
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 全量语料生成 + 入库（可断点续跑）
-# @author jingxin
+# @author 代长亚
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

@@ -1,6 +1,6 @@
 /**
  * Corpus V3 可读 Markdown 解析（导入对齐用）
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";

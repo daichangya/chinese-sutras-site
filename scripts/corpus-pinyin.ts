@@ -1,6 +1,6 @@
 /**
  * 批量生成 chinese-sutras-md 可读拼音卷（{经}/拼音/，结构同 原文/、简体/）
- * @author jingxin
+ * @author 代长亚
  */
 import fs from "fs";
 import path from "path";
