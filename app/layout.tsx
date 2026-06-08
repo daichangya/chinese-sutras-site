@@ -9,6 +9,14 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: brandPageTitle(),
   description: "现代化佛经阅读与理解平台，CBETA 底本，AI 辅助释义",
+  icons: {
+    icon: [{ url: "/icon", type: "image/png", sizes: "32x32" }],
+    apple: [{ url: "/apple-icon", type: "image/png", sizes: "180x180" }],
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f5ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0a09" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
