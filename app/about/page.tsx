@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { DiscoveryLayout } from "@/components/layout/discovery-layout";
 import { SectionHeader } from "@/components/ui/section-header";
-import { brandAboutIntro } from "@/lib/brand";
+import { brandAboutIntro, BRAND_AUTHOR_EMAIL, BRAND_AUTHOR_NAME, BRAND_REPO_URL } from "@/lib/brand";
 
 export default function AboutPage() {
   return (
@@ -29,6 +29,30 @@ export default function AboutPage() {
         </p>
         <SectionHeader label="AI 说明" className="mt-10" />
         <p>白话译文与划选解释由 AI 辅助生成，可能存在偏差，仅供学习参考。</p>
+        <SectionHeader label="作者与项目" className="mt-10" />
+        <p>
+          本站由{" "}
+          <span className="font-medium text-[var(--foreground)]">{BRAND_AUTHOR_NAME}</span>{" "}
+          开发与维护。问题反馈或合作请联系{" "}
+          <a
+            href={`mailto:${BRAND_AUTHOR_EMAIL}`}
+            className="text-[var(--jx-accent-cinnabar)] underline underline-offset-2 dark:text-[var(--jx-gold)]"
+          >
+            {BRAND_AUTHOR_EMAIL}
+          </a>
+          。
+        </p>
+        <p className="mt-3">
+          应用源码：
+          <a
+            href={BRAND_REPO_URL}
+            className="ml-1 text-[var(--jx-accent-cinnabar)] underline underline-offset-2 dark:text-[var(--jx-gold)]"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            github.com/daichangya/chinese-sutras-site
+          </a>
+        </p>
       </div>
       <p className="mt-12 text-center">
         <Link href="/" className="text-sm text-[var(--muted)] underline-offset-4 hover:underline">

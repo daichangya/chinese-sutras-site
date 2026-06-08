@@ -3,7 +3,7 @@
  * @author 代长亚
  */
 import Link from "next/link";
-import { brandFooterLabel } from "@/lib/brand";
+import { brandFooterLabel, BRAND_AUTHOR_EMAIL, BRAND_AUTHOR_NAME, BRAND_REPO_URL } from "@/lib/brand";
 
 export function SiteFooter() {
   return (
@@ -28,6 +28,25 @@ export function SiteFooter() {
             <span className="sr-only">（在新窗口中打开）</span>
           </a>
           ，仅供非商业学习使用。
+        </p>
+        <p className="mt-3 text-xs text-[var(--jx-muted-label)]">
+          © {new Date().getFullYear()} {BRAND_AUTHOR_NAME} ·{" "}
+          <a
+            href={`mailto:${BRAND_AUTHOR_EMAIL}`}
+            className="underline hover:text-[var(--foreground)] transition-colors"
+          >
+            {BRAND_AUTHOR_EMAIL}
+          </a>
+          {" · "}
+          <a
+            href={BRAND_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-[var(--foreground)] transition-colors"
+          >
+            GitHub
+            <span className="sr-only">（在新窗口中打开）</span>
+          </a>
         </p>
         <p className="mt-3 text-xs">
           <Link href="/about" className="underline hover:text-[var(--foreground)] transition-colors">

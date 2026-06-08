@@ -6,6 +6,11 @@ export const BRAND_NAME_EN = "JINGXIN";
 export const BRAND_NAME_ZH = "静心";
 export const BRAND_TAGLINE = "让佛经更容易读懂";
 
+/** 站点作者与仓库 */
+export const BRAND_AUTHOR_NAME = "代长亚";
+export const BRAND_AUTHOR_EMAIL = "daichangya@163.com";
+export const BRAND_REPO_URL = "https://github.com/daichangya/chinese-sutras-site";
+
 export function brandHeroLabel(): string {
   return `${BRAND_NAME_EN} · ${BRAND_NAME_ZH}`;
 }
