@@ -10,7 +10,7 @@ test.describe("fojin parity routes", () => {
     await expect(page.getByTestId("home-hero")).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId("home-stats-bar")).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId("home-feature-grid")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("heading", { name: "静心", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "正信•经藏", level: 1 })).toBeVisible();
   });
 
   test("nav shows active state on canon page", async ({ page }) => {

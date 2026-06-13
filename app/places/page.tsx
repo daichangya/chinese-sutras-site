@@ -6,11 +6,12 @@ import { Suspense } from "react";
 import { DiscoveryLayout } from "@/components/layout/discovery-layout";
 import { KgMap } from "@/components/kg/kg-map";
 import { getSqlite } from "@/lib/db";
+import { brandPageTitleSuffix } from "@/lib/brand";
 
 export const revalidate = 3600;
 
 export const metadata = {
-  title: "佛教地理 | 静心",
+  title: `佛教地理 | ${brandPageTitleSuffix()}`,
   description: "探索佛教圣地、著名寺院与相关地理知识实体",
 };
 

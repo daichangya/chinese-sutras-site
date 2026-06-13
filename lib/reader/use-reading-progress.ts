@@ -8,6 +8,11 @@ import { useEffect, useRef } from "react";
 
 const USER_KEY_STORAGE = "jingxin-device-id";
 
+/** 匿名设备 ID（仅用于未登录时的本地合并） */
+export function getDeviceKey(): string {
+  return getUserKey();
+}
+
 export function getUserKey(): string {
   if (typeof window === "undefined") return "server";
   let key = localStorage.getItem(USER_KEY_STORAGE);

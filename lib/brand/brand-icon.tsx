@@ -1,8 +1,9 @@
 /**
  * 站点图标生成（favicon / apple-touch-icon）
- * @author jingxin
+ * @author 代长亚
  */
 import type { ReactNode } from "react";
+import { getBrandIconChar } from "@/lib/brand";
 
 /** 纸色、朱砂、边框 — 与 globals.css 设计 token 一致 */
 export const BRAND_ICON_COLORS = {
@@ -17,7 +18,7 @@ const NOTO_SERIF_SC_WOFF =
 
 let fontCache: ArrayBuffer | null = null;
 
-/** 加载 Noto Serif SC，供 ImageResponse 渲染「静」字 */
+/** 加载 Noto Serif SC，供 ImageResponse 渲染品牌单字 */
 export async function loadBrandIconFont(): Promise<ArrayBuffer> {
   if (fontCache) return fontCache;
   const res = await fetch(NOTO_SERIF_SC_WOFF);
@@ -70,7 +71,7 @@ export function BrandIconImage({ size }: BrandIconImageProps): ReactNode {
           background: BRAND_ICON_COLORS.gold,
         }}
       />
-      静
+      {getBrandIconChar()}
     </div>
   );
 }

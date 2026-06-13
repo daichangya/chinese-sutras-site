@@ -26,10 +26,19 @@ export function buildExplainPrompt(
   };
 }
 
-export function buildDailySummaryPrompt(verseText: string, sutraTitle: string) {
+import { brandAiSystemRole } from "@/lib/brand";
+
+export function buildDailySummaryPrompt(verseText: string, sutraTitle: string, festivalTheme?: string) {
+  const themeHint = festivalTheme ? `今日主题：${festivalTheme}。` : "";
   return {
-    system:
-      "你是 jingxin 静心佛经阅读助手。用温暖、简洁的现代汉语写一段今日经句解读，80-120字，可供分享。不要虚构出处。",
+    system: `${brandAiSystemRole()}${themeHint}用温暖、简洁的现代汉语写一段今日经句解读，80-120字，可供分享。不要虚构出处。`,
     user: `经名：${sutraTitle}\n经句：${verseText}`,
+  };
+}
+
+export function buildFestivalVerseSelectPrompt(festivalName: string, aiTheme: string, ragContext: string) {
+  return {
+    system: `${brandAiSystemRole()}你从经藏候选段落中，为「${festivalName}」选取最贴切的一段经文摘录（不超过80字）。必须只选候选中的真实经文，禁止虚构经名。回复格式：先写 [序号]，再可选 JSON {"paragraphId":"...","excerpt":"...","sutraTitle":"..."}。`,
+    user: `节日主题：${aiTheme}\n\n候选经文：\n${ragContext || "（无候选，请回复 [1] 并说明无法选取）"}`,
   };
 }

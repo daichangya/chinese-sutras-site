@@ -11,6 +11,7 @@ import {
   BookOpen,
   Bookmark,
   Bot,
+  CalendarDays,
   FileText,
   GitBranch,
   Map,
@@ -21,11 +22,15 @@ import {
 } from "lucide-react";
 import { IconNavLink } from "./icon-nav-link";
 import { MobileNav } from "./mobile-nav";
+import { UserMenu } from "@/components/auth/user-menu";
+import { BuddhistDateChip } from "@/components/calendar/buddhist-date-chip";
+import { useBrand } from "@/components/layout/brand-provider";
 import { useTheme } from "@/lib/theme/use-theme";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const { brandName, calendarDay } = useBrand();
   const isHome = pathname === "/";
   const { theme, toggleTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
@@ -54,18 +59,24 @@ export function SiteHeader() {
       style={{ height: "var(--jx-header-height)" }}
     >
       <div className="jx-shell flex h-full items-center justify-between">
-        <Link
-          href="/"
-          className="jx-hero-title flex items-center gap-2 text-xl tracking-[0.15em] text-[var(--jx-ink-classical)] md:text-2xl"
-          aria-label="静心 - 返回首页"
-        >
-          静心
-        </Link>
+        <div className="flex items-center gap-3 min-w-0">
+          <Link
+            href="/"
+            className="jx-hero-title flex items-center gap-2 text-xl tracking-[0.15em] text-[var(--jx-ink-classical)] md:text-2xl shrink-0"
+            aria-label={`${brandName} - 返回首页`}
+          >
+            {brandName}
+          </Link>
+          {calendarDay && (
+            <BuddhistDateChip day={calendarDay} compact className="min-w-0" />
+          )}
+        </div>
 
         <nav
           className="hidden md:flex items-center gap-4 text-sm"
           aria-label="桌面端主导航"
         >
+          <IconNavLink href="/calendar" icon={CalendarDays} label="佛历" />
           <IconNavLink href="/canon" icon={BookOpen} label="经藏" />
           <IconNavLink href="/search" icon={Search} label="搜索" />
           <IconNavLink href="/dictionary" icon={ScrollText} label="辞典" />
@@ -74,6 +85,7 @@ export function SiteHeader() {
           <IconNavLink href="/bookmarks" icon={Bookmark} label="收藏" />
           <IconNavLink href="/chat" icon={Bot} label="AI 问经" />
           <IconNavLink href="/about" icon={FileText} label="关于" />
+          <UserMenu />
           <button
             type="button"
             onClick={toggleTheme}

@@ -4,6 +4,7 @@
  */
 import { NextResponse } from "next/server";
 import { getSqlite } from "@/lib/db";
+import { requireDataAccess } from "@/lib/auth/require-user";
 
 export async function POST(req: Request) {
   const body = (await req.json()) as {
@@ -26,10 +27,10 @@ export async function POST(req: Request) {
     }>;
   };
 
-  const userKey = body.userKey?.trim();
-  if (!userKey) {
-    return NextResponse.json({ error: "userKey required" }, { status: 400 });
-  }
+  const access = await requireDataAccess(body.userKey);
+  if (access instanceof NextResponse) return access;
+  const { ctx } = access;
+  const userKey = ctx.dataKey;
 
   const db = getSqlite();
   const now = Date.now();
@@ -79,15 +80,15 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, loggedIn: ctx.loggedIn });
 }
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const userKey = searchParams.get("userKey")?.trim();
-  if (!userKey) {
-    return NextResponse.json({ error: "userKey required" }, { status: 400 });
-  }
+  const access = await requireDataAccess(searchParams.get("userKey"));
+  if (access instanceof NextResponse) return access;
+  const { ctx } = access;
+  const userKey = ctx.dataKey;
 
   const db = getSqlite();
   const bookmarks = db
@@ -103,5 +104,5 @@ export async function GET(req: Request) {
     )
     .all(userKey);
 
-  return NextResponse.json({ bookmarks, annotations });
+  return NextResponse.json({ bookmarks, annotations, loggedIn: ctx.loggedIn });
 }

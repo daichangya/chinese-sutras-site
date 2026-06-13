@@ -4,15 +4,18 @@
  */
 import { NextResponse } from "next/server";
 import { getSqlite } from "@/lib/db";
+import { requireDataAccess } from "@/lib/auth/require-user";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const userKey = searchParams.get("userKey")?.trim();
   const sutraId = searchParams.get("sutraId")?.trim();
-  if (!userKey || !sutraId) {
-    return NextResponse.json({ error: "userKey and sutraId required" }, { status: 400 });
+  const access = await requireDataAccess(searchParams.get("userKey"));
+  if (access instanceof NextResponse) return access;
+  if (!sutraId) {
+    return NextResponse.json({ error: "sutraId required" }, { status: 400 });
   }
 
+  const userKey = access.ctx.dataKey;
   const db = getSqlite();
   const row = db
     .prepare(
@@ -23,7 +26,7 @@ export async function GET(req: Request) {
     | { paragraphId: string; scrollY: number; updatedAt: number }
     | undefined;
 
-  return NextResponse.json({ progress: row ?? null });
+  return NextResponse.json({ progress: row ?? null, loggedIn: access.ctx.loggedIn });
 }
 
 export async function POST(req: Request) {
@@ -36,11 +39,14 @@ export async function POST(req: Request) {
     scrollY?: number;
   };
 
-  const userKey = body.userKey?.trim();
+  const access = await requireDataAccess(body.userKey);
+  if (access instanceof NextResponse) return access;
+
+  const userKey = access.ctx.dataKey;
   const sutraId = body.sutraId?.trim();
   const paragraphId = body.paragraphId?.trim();
-  if (!userKey || !sutraId || !paragraphId) {
-    return NextResponse.json({ error: "userKey, sutraId, paragraphId required" }, { status: 400 });
+  if (!sutraId || !paragraphId) {
+    return NextResponse.json({ error: "sutraId, paragraphId required" }, { status: 400 });
   }
 
   const db = getSqlite();
@@ -62,5 +68,5 @@ export async function POST(req: Request) {
     ).run(histId, userKey, sutraId, body.sutraSlug, body.sutraTitle, paragraphId, now);
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, loggedIn: access.ctx.loggedIn });
 }

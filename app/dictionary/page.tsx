@@ -3,6 +3,7 @@
  * @author 代长亚
  */
 import { DictionaryPageClient } from "@/components/dictionary/dictionary-page-client";
+import { brandPageTitleSuffix } from "@/lib/brand";
 import type { Metadata } from "next";
 
 export const revalidate = 300;
@@ -15,12 +16,12 @@ export async function generateMetadata({
   const { q = "" } = await searchParams;
   if (q.trim()) {
     return {
-      title: `「${q.trim()}」辞典检索 | 静心`,
+      title: `「${q.trim()}」辞典检索 | ${brandPageTitleSuffix()}`,
       description: `查询「${q.trim()}」的佛学辞典释义`,
     };
   }
   return {
-    title: "佛学辞典 | 静心",
+    title: `佛学辞典 | ${brandPageTitleSuffix()}`,
     description: "多源佛教辞典检索，支持划选查词与繁简转换",
   };
 }

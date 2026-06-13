@@ -149,6 +149,30 @@ npm run seed:daily       # 初始今日经句
 npm run daily:refresh    # 按策略刷新经句
 ```
 
+### 佛教节日配置
+
+节日与斋日数据在 [`data/buddhist-calendar/festivals.yaml`](../../data/buddhist-calendar/festivals.yaml)：
+
+- `tier: major` — 触发今日经句节日联动；须配置 `aiTheme` 与 `searchHints`；可选 `verseOverride` 人工策展经句
+- `tier: minor` — 仅在 `/calendar` 月历中标注
+- 无 `verseOverride` 时，节日当天由 `/api/ai/daily` 通过 FTS RAG + AI 推荐经句并写入 `daily_verse` 缓存
+
+修改 YAML 后重启开发服务器即可生效（生产需重新部署）。
+
+`relatedSutras` 使用友好 slug，与经藏路由编码对照：
+
+| slug | 经典全称 |
+|------|----------|
+| `xinjing` | 般若波罗蜜多心经 |
+| `famen-pin` | 妙法莲华经观世音菩萨普门品 |
+| `fo-benxing-jing` | 佛本行集经 |
+| `niepan-jing` | 大般涅槃经 |
+| `yulanpen-jing` | 佛说盂兰盆经 |
+| `yaoshi-jing` | 药师琉璃光如来本愿功德经 |
+| `amituo-jing` | 佛说阿弥陀经 |
+
+解析逻辑见 [`lib/calendar/festival-sutras.ts`](../../lib/calendar/festival-sutras.ts)。
+
 ---
 
 ## 验收清单

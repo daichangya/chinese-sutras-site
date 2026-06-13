@@ -1,5 +1,5 @@
 import { SearchForm } from "@/components/home/search-form";
-import { DailyVerseCard } from "@/components/home/daily-verse-card";
+import { DailyVerseCardWithRefresh } from "@/components/calendar/daily-verse-card-with-refresh";
 import { PopularSutraGrid } from "@/components/home/popular-sutra-grid";
 import { TopicTeasers } from "@/components/home/topic-teasers";
 import { HomeFeatureCards } from "@/components/home/home-feature-cards";
@@ -7,40 +7,25 @@ import { HomePopularChips } from "@/components/home/home-popular-chips";
 import { HomeStatsBar } from "@/components/home/home-stats-bar";
 import { SectionHeader } from "@/components/ui/section-header";
 import { listPopularSutras } from "@/lib/search/fts";
-import { getDailyVerse, getParagraphById } from "@/lib/sutra/queries";
 import { getSqlite } from "@/lib/db";
 import { getCorpusStats } from "@/lib/stats/corpus-stats";
-import { brandHeroLabel } from "@/lib/brand";
+import { brandHeroLabel, getBrandName, getBrandTagline } from "@/lib/brand";
+import { resolveDailyVerse } from "@/lib/calendar/daily-verse";
+import { resolveCalendarDay } from "@/lib/calendar/resolve-day";
+import { getCalendarTodayKey } from "@/lib/calendar/today";
 
 export const revalidate = 3600;
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export default function HomePage() {
   getSqlite();
   const stats = getCorpusStats();
   const popular = listPopularSutras(12);
-  const daily = getDailyVerse(todayKey());
-  let verseText = daily?.customText ?? "凡所有相，皆是虚妄。";
-  let verseSource = "";
-
-  if (daily?.snippetText) {
-    verseText = daily.snippetText;
-    verseSource = daily.sourceTitle ?? "";
-  } else if (daily?.paragraphId) {
-    const p = getParagraphById(daily.paragraphId);
-    if (p) {
-      verseText = p.text.slice(0, 80);
-      const s = popular.find((x) => x.id === p.sutraId);
-      verseSource = s?.title ?? "";
-    }
-  }
+  const todayKey = getCalendarTodayKey();
+  const calendarDay = resolveCalendarDay(todayKey);
+  const resolvedVerse = resolveDailyVerse(todayKey);
 
   return (
     <div className="animate-jx-fade">
-      {/* Hero — FoJin 式单屏门户 */}
       <section
         className="jx-portal-hero jx-full relative flex flex-col"
         data-testid="home-hero"
@@ -51,10 +36,10 @@ export default function HomePage() {
             {brandHeroLabel()}
           </p>
           <h1 className="jx-hero-title mt-4 text-center text-5xl md:text-7xl lg:text-[5.5rem]">
-            静心
+            {getBrandName()}
           </h1>
           <p className="mx-auto mt-4 max-w-md text-center text-sm tracking-[0.35em] text-[var(--jx-ink-light)] jx-ui-shell md:text-base">
-            让佛经更容易读懂
+            {getBrandTagline()}
           </p>
 
           <div className="mt-8 flex w-full justify-center">
@@ -70,10 +55,10 @@ export default function HomePage() {
 
       <section className="jx-shell py-8 md:py-12">
         <SectionHeader label="今日经句" accent />
-        <DailyVerseCard
-          verseText={verseText}
-          verseSource={verseSource}
-          aiSummary={daily?.aiSummary}
+        <DailyVerseCardWithRefresh
+          initial={resolvedVerse}
+          calendarDay={calendarDay}
+          verseDate={todayKey}
         />
       </section>
 

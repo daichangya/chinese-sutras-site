@@ -5,11 +5,12 @@
 import Link from "next/link";
 import { DiscoveryLayout } from "@/components/layout/discovery-layout";
 import { SectionHeader } from "@/components/ui/section-header";
-import { brandAboutIntro, BRAND_AUTHOR_EMAIL, BRAND_AUTHOR_NAME, BRAND_REPO_URL } from "@/lib/brand";
+import { brandAboutIntro, BRAND_AUTHOR_EMAIL, BRAND_AUTHOR_NAME, BRAND_REPO_URL, getBrandName } from "@/lib/brand";
 
 export default function AboutPage() {
+  const brandName = getBrandName();
   return (
-    <DiscoveryLayout label="关于" title="关于静心">
+    <DiscoveryLayout label="关于" title={`关于${brandName}`}>
       <div className="prose-jx max-w-none text-base">
         <p>
           {brandAboutIntro()}

@@ -30,14 +30,14 @@ test.describe("share card export", () => {
     await page.goto(sharePath, { waitUntil: "domcontentloaded" });
 
     await expect(page.getByTestId("share-card-export")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("静心 · JINGXIN")).toBeVisible();
+    await expect(page.getByText("正信•经藏")).toBeVisible();
     await expect(page.getByRole("button", { name: /下载图片/ })).toBeVisible();
 
     const downloadPromise = page.waitForEvent("download", { timeout: 20000 }).catch(() => null);
     await page.getByRole("button", { name: /下载图片/ }).click();
     const download = await downloadPromise;
     if (download) {
-      expect(download.suggestedFilename()).toMatch(/^JINGXIN-share-.+\.png$/);
+      expect(download.suggestedFilename()).toMatch(/^zhengxin-jingzang-share-.+\.png$/);
     }
   });
 });

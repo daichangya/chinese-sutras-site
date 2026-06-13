@@ -1,0 +1,225 @@
+# 汉传佛教节日（农历月日）
+# major：触发今日经句联动；须含 aiTheme + searchHints；verseOverride 可选
+# minor：仅月历标注
+# relatedSutras 经目编码见 lib/calendar/festival-sutras.ts（友好 slug → CBETA）
+# 备注：七月三十地藏圣诞、九月三十药师圣诞逢小月无三十，寺院多顺延至二十九举行
+
+# --- major 核心联动节日 ---
+- id: buddha-leave-home
+  name: 释迦牟尼佛出家日
+  lunarMonth: 2
+  lunarDay: 8
+  tier: major
+  aiTheme: 佛出家纪念日，舍弃王宫荣华，发起求解脱、度众生之大愿
+  searchHints:
+    - 佛陀出家
+    - 舍弃王位修行
+    - 发菩提心
+  relatedSutras:
+    - fo-benxing-jing
+
+- id: buddha-parinirvana
+  name: 释迦牟尼佛涅槃
+  lunarMonth: 2
+  lunarDay: 15
+  tier: major
+  aiTheme: 涅槃日，示现世间无常，法身不灭常住十方
+  searchHints:
+    - 涅槃
+    - 无常
+    - 法身常住
+  relatedSutras:
+    - niepan-jing
+
+- id: guanyin-birthday
+  name: 观音菩萨圣诞
+  lunarMonth: 2
+  lunarDay: 19
+  tier: major
+  aiTheme: 观音圣诞，大悲愿力普门示现，寻声救度一切苦难众生
+  searchHints:
+    - 观音菩萨
+    - 普门品
+    - 大悲慈悲
+  relatedSutras:
+    - famen-pin
+
+- id: buddha-birthday
+  name: 释迦牟尼佛圣诞（浴佛节）
+  lunarMonth: 4
+  lunarDay: 8
+  tier: major
+  aiTheme: 浴佛节，佛陀降生，彰显一切众生本自具足清净佛性
+  searchHints:
+    - 浴佛
+    - 本具佛性
+    - 一切众生皆有佛性
+  relatedSutras:
+    - fo-benxing-jing
+
+- id: ullambana
+  name: 盂兰盆节（佛欢喜日）
+  lunarMonth: 7
+  lunarDay: 15
+  tier: major
+  aiTheme: 盂兰盆报恩节，供僧孝亲，超荐七世父母，圆满孝道功德
+  searchHints:
+    - 盂兰盆
+    - 目连救母
+    - 孝道报恩
+  relatedSutras:
+    - yulanpen-jing
+
+- id: medicine-buddha
+  name: 药师佛圣诞
+  lunarMonth: 9
+  lunarDay: 30
+  tier: major
+  aiTheme: 药师圣诞，十二大愿护佑众生消灾祛病、身心安乐、福寿绵长
+  searchHints:
+    - 药师佛
+    - 消灾延寿
+    - 十二大愿
+  relatedSutras:
+    - yaoshi-jing
+
+- id: amitabha-birthday
+  name: 阿弥陀佛圣诞
+  lunarMonth: 11
+  lunarDay: 17
+  tier: major
+  aiTheme: 弥陀圣诞，四十八宏大愿力接引众生往生西方极乐净土
+  searchHints:
+    - 阿弥陀佛
+    - 极乐净土
+    - 发愿往生
+  relatedSutras:
+    - amituo-jing
+
+- id: buddha-enlightenment
+  name: 释迦牟尼佛成道日（腊八）
+  lunarMonth: 12
+  lunarDay: 8
+  tier: major
+  aiTheme: 成道纪念日，菩提树下睹星开悟，证得无上正等正觉
+  searchHints:
+    - 成道
+    - 觉悟
+    - 菩提树下悟道
+  relatedSutras:
+    - fo-benxing-jing
+
+# --- minor 月历标注节日（无联动经句）---
+- id: maitreya-birthday
+  name: 弥勒菩萨圣诞
+  lunarMonth: 1
+  lunarDay: 1
+  tier: minor
+
+- id: dingguang-buddha
+  name: 定光佛圣诞
+  lunarMonth: 1
+  lunarDay: 6
+  tier: minor
+
+- id: wenshu-birthday
+  name: 文殊菩萨圣诞
+  lunarMonth: 4
+  lunarDay: 4
+  tier: minor
+
+- id: buddha-bliss-day
+  name: 佛吉祥日（卫塞节三期同庆）
+  lunarMonth: 4
+  lunarDay: 15
+  tier: minor
+
+- id: yaowang-birthday
+  name: 药王菩萨圣诞
+  lunarMonth: 4
+  lunarDay: 28
+  tier: minor
+
+- id: puxian-birthday
+  name: 普贤菩萨圣诞
+  lunarMonth: 2
+  lunarDay: 21
+  tier: minor
+
+- id: zhunti-birthday
+  name: 准提菩萨圣诞
+  lunarMonth: 3
+  lunarDay: 16
+  tier: minor
+
+- id: galan-birthday
+  name: 伽蓝菩萨圣诞
+  lunarMonth: 5
+  lunarDay: 13
+  tier: minor
+
+- id: weituo-birthday
+  name: 韦驮菩萨圣诞
+  lunarMonth: 6
+  lunarDay: 3
+  tier: minor
+
+- id: guanyin-enlightenment
+  name: 观音菩萨成道日
+  lunarMonth: 6
+  lunarDay: 19
+  tier: minor
+
+- id: dashizhi-birthday
+  name: 大势至菩萨圣诞
+  lunarMonth: 7
+  lunarDay: 13
+  tier: minor
+
+- id: longshu-birthday
+  name: 龙树菩萨圣诞
+  lunarMonth: 7
+  lunarDay: 24
+  tier: minor
+
+- id: dizang-birthday
+  name: 地藏王菩萨圣诞
+  lunarMonth: 7
+  lunarDay: 30
+  tier: minor
+
+- id: yueguang-birthday
+  name: 月光菩萨圣诞
+  lunarMonth: 8
+  lunarDay: 15
+  tier: minor
+
+- id: riguang-birthday
+  name: 日光菩萨圣诞
+  lunarMonth: 11
+  lunarDay: 19
+  tier: minor
+
+- id: randeng-birthday
+  name: 燃灯佛圣诞
+  lunarMonth: 8
+  lunarDay: 22
+  tier: minor
+
+- id: guanyin-renunciation
+  name: 观音菩萨出家日
+  lunarMonth: 9
+  lunarDay: 19
+  tier: minor
+
+- id: damo-birthday
+  name: 达摩祖师圣诞
+  lunarMonth: 10
+  lunarDay: 5
+  tier: minor
+
+- id: huayan-birthday
+  name: 华严菩萨圣诞
+  lunarMonth: 12
+  lunarDay: 29
+  tier: minor

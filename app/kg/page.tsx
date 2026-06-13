@@ -6,11 +6,12 @@ import { Suspense } from "react";
 import { DiscoveryLayout } from "@/components/layout/discovery-layout";
 import { KgExplorer } from "@/components/kg/kg-explorer";
 import { getSqlite } from "@/lib/db";
+import { brandPageTitleSuffix } from "@/lib/brand";
 
 export const revalidate = 3600;
 
 export const metadata = {
-  title: "知识图谱 | 静心",
+  title: `知识图谱 | ${brandPageTitleSuffix()}`,
   description: "探索译者、经典与佛教知识实体之间的关系",
 };
 

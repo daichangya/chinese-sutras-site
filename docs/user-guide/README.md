@@ -20,8 +20,11 @@
 | `/person/[id]` | 人物详情 | 译者与佛教人物条目 | [06 图谱与地理](./06-kg-and-places.md) |
 | `/places` | 佛教地理 | 圣地与寺院地图 | [06 图谱与地理](./06-kg-and-places.md) |
 | `/bookmarks` | 我的收藏 | 阅读中收藏的经目 | [08 收藏专题经句](./08-bookmarks-topics-verse.md) |
+| `/login` | 微信登录 | PC 扫码 / 微信内授权（可选） | [09 账号与登录](./09-account-login.md) |
+| `/account` | 个人中心 | 昵称、绑定状态、登出 | [09 账号与登录](./09-account-login.md) |
 | `/topic/[slug]` | 专题阅读 | 主题导读与推荐经目 | [08 收藏专题经句](./08-bookmarks-topics-verse.md) |
 | `/verse/today` | 今日经句 | 每日一句，可分享 | [08 收藏专题经句](./08-bookmarks-topics-verse.md) |
+| `/calendar` | 佛历 | 农历、节日、六斋十斋 | [10 佛历](./10-buddhist-calendar.md) |
 | `/share/[id]` | 分享页 | 经文片段分享卡片 | [07 抄经对读分享](./07-copybook-parallel-share.md) |
 | `/about` | 关于 | 平台说明、版权与免责 | [08 收藏专题经句](./08-bookmarks-topics-verse.md) |
 

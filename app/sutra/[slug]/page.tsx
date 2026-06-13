@@ -2,6 +2,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { SutraReaderClient } from "@/components/reader/reader-client";
+import { brandPageTitleSuffix, getBrandName } from "@/lib/brand";
 import { getSqlite } from "@/lib/db";
 import {
   countParagraphsForSutra,
@@ -26,13 +27,14 @@ export async function generateMetadata({
   getSqlite();
   const { slug } = await params;
   const sutra = cachedGetSutraBySlug(slug);
-  if (!sutra) return { title: "经文 | 静心" };
+  if (!sutra) return { title: `经文 | ${brandPageTitleSuffix()}` };
+  const brandName = getBrandName();
   return {
-    title: `${sutra.title} | 静心`,
+    title: `${sutra.title} | ${brandName}`,
     description: `${sutra.title}${sutra.translator ? ` — ${sutra.translator}` : ""}。现代化阅读，白话与 AI 辅助理解。`,
     openGraph: {
       title: sutra.title,
-      description: sutra.translator ?? "静心佛经阅读",
+      description: sutra.translator ?? `${brandName}佛经阅读`,
     },
   };
 }

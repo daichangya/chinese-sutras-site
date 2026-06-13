@@ -3,12 +3,12 @@
  * @author 代长亚
  */
 import { ImageResponse } from "next/og";
-import { brandOgSubtitle } from "@/lib/brand";
+import { brandOgSubtitle, getBrandName } from "@/lib/brand";
 import { getSqlite } from "@/lib/db";
 import { getDailyVerse } from "@/lib/sutra/queries";
 
 export const runtime = "nodejs";
-export const alt = "静心 · 今日经句";
+export const alt = `${getBrandName()} · 今日经句`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -18,6 +18,7 @@ function todayKey() {
 
 export default async function Image() {
   getSqlite();
+  const brandName = getBrandName();
   const daily = getDailyVerse(todayKey());
   const text = (daily?.customText ?? "凡所有相，皆是虚妄。").slice(0, 80);
 
@@ -37,7 +38,7 @@ export default async function Image() {
         }}
       >
         <div style={{ fontSize: 28, letterSpacing: 8, color: "#b45309", marginBottom: 32 }}>
-          今日经句 · 静心
+          今日经句 · {brandName}
         </div>
         <div style={{ fontSize: 42, lineHeight: 1.5, maxWidth: 1000 }}>{text}</div>
         <div style={{ fontSize: 22, marginTop: 48, color: "#78716c" }}>{brandOgSubtitle()}</div>

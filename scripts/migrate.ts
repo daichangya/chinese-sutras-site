@@ -6,6 +6,12 @@ import fs from "fs";
 import path from "path";
 import { getSqlite, closeDb } from "@/lib/db/sqlite";
 import { closeSearchDb, ensureSearchSchema, getSearchSqlite } from "@/lib/db/search-sqlite";
+import { closeAuthDb, getAuthSqlite, resolveAuthDbPath } from "@/lib/auth/sqlite";
+import {
+  dropLegacyAuthTablesFromMain,
+  ensureAuthSchema,
+  migrateAuthFromMainDbIfNeeded,
+} from "@/lib/auth/ensure-schema";
 
 const dataDir = process.env.DATA_DIR ?? "./data";
 fs.mkdirSync(dataDir, { recursive: true });
@@ -309,9 +315,21 @@ dropColumn("paragraph", "pinyin_text");
 
 const searchDb = getSearchSqlite();
 ensureSearchSchema(searchDb);
+
+const authDb = getAuthSqlite();
+ensureAuthSchema(authDb);
+const authMigration = migrateAuthFromMainDbIfNeeded(authDb, db);
+if (authMigration.migrated) {
+  console.log(`Migrated ${authMigration.users} user(s) from main DB to auth DB`);
+} else {
+  dropLegacyAuthTablesFromMain(db);
+}
+
 console.log(`Migrated main DB at ${path.join(dataDir, "jingxin.db")}`);
+console.log(`Auth DB at ${resolveAuthDbPath(dataDir)} (app_user / oauth / session)`);
 console.log(`Search DB at ${path.join(dataDir, "jingxin-search.db")} (paragraph_fts)`);
 console.log(`Run npm run db:refresh-perf-cache after import to populate perf tables`);
 console.log(`Run npm run fts:rebuild after corpus import`);
+closeAuthDb();
 closeSearchDb();
 closeDb();

@@ -1,27 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BuddhistDateChip } from "@/components/calendar/buddhist-date-chip";
+import { FestivalTierBadge } from "@/components/calendar/festival-tier-badge";
+import { hasMajorFestival } from "@/components/calendar/calendar-utils";
 import { getSqlite } from "@/lib/db";
-import { getDailyVerse, getParagraphById } from "@/lib/sutra/queries";
 import { getSutraBySlug } from "@/lib/sutra/queries";
-import { listPopularSutras } from "@/lib/search/fts";
-import { brandInlineLabel } from "@/lib/brand";
+import { brandInlineLabel, getBrandName } from "@/lib/brand";
+import { resolveDailyVerse } from "@/lib/calendar/daily-verse";
+import { resolveCalendarDay } from "@/lib/calendar/resolve-day";
+import { getCalendarTodayKey } from "@/lib/calendar/today";
+import { cn } from "@/lib/utils";
 
 export const revalidate = 3600;
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export async function generateMetadata(): Promise<Metadata> {
   getSqlite();
-  const daily = getDailyVerse(todayKey());
-  const text = daily?.customText ?? "凡所有相，皆是虚妄。";
-  const description = text.slice(0, 120);
+  const todayKey = getCalendarTodayKey();
+  const resolved = resolveDailyVerse(todayKey);
+  const description = resolved.verseText.slice(0, 120);
+  const brandName = getBrandName();
+  const titlePrefix = resolved.festival ? `${resolved.festival.name} · 今日经句` : "今日经句";
   return {
-    title: `今日经句 | 静心`,
+    title: `${titlePrefix} | ${brandName}`,
     description,
     openGraph: {
-      title: "今日经句 · 静心",
+      title: `${titlePrefix} · ${brandName}`,
       description,
       type: "website",
       images: [{ url: "/verse/today/opengraph-image", width: 1200, height: 630 }],
@@ -31,64 +34,87 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function VerseTodayPage() {
   getSqlite();
-  const daily = getDailyVerse(todayKey());
-  let verseText = daily?.customText ?? "凡所有相，皆是虚妄。若见诸相非相，则见如来。";
-  let sutraTitle = "";
-  let sutraSlug = "xinjing";
+  const todayKey = getCalendarTodayKey();
+  const calendarDay = resolveCalendarDay(todayKey);
+  const resolved = resolveDailyVerse(todayKey);
+  const label = resolved.festival ? `${resolved.festival.name} · 今日经句` : "今日经句";
+  const isMajorDay = hasMajorFestival(calendarDay);
 
-  if (daily?.paragraphId) {
-    const p = getParagraphById(daily.paragraphId);
-    if (p) {
-      verseText = p.text.slice(0, 200);
-      const popular = listPopularSutras(20);
-      const s = popular.find((x) => x.id === p.sutraId);
-      if (s) {
-        sutraTitle = s.title;
-        sutraSlug = s.slug;
-      }
-    }
+  let sutraSlug = "xinjing";
+  if (resolved.paragraphId) {
+    const db = getSqlite();
+    const row = db
+      .prepare(
+        `SELECT s.slug FROM paragraph p JOIN sutra s ON s.id = p.sutra_id WHERE p.id = ?`,
+      )
+      .get(resolved.paragraphId) as { slug: string } | undefined;
+    if (row) sutraSlug = row.slug;
   } else {
     const xinjing = getSutraBySlug("xinjing");
-    if (xinjing) sutraTitle = xinjing.title;
+    if (xinjing && !resolved.verseSource) {
+      /* keep default slug */
+    }
   }
+
+  const calendarHref = `/calendar?year=${calendarDay.gregorianYear}&month=${calendarDay.gregorianMonth}#today`;
 
   return (
     <div className="jx-page animate-jx-fade">
-      {/* 经句卡片 */}
-      <div className="share-card rounded-xl md:rounded-2xl border border-[#dcc9a0] bg-gradient-to-br from-[var(--jx-paper-elevated)] via-[var(--jx-paper)] to-[rgb(139_37_0/0.04)] p-6 md:p-10 text-center dark:border-[var(--jx-border)]/40 dark:from-stone-900 dark:to-stone-950">
-        <p className="jx-section-label text-[var(--jx-accent-cinnabar)]/80 dark:text-[var(--jx-gold)]/80 mb-4 md:mb-6">今日经句</p>
+      <div
+        className={cn(
+          "share-card rounded-xl md:rounded-2xl border border-[#dcc9a0] bg-gradient-to-br from-[var(--jx-paper-elevated)] via-[var(--jx-paper)] to-[rgb(139_37_0/0.04)] p-6 md:p-10 text-center dark:border-[var(--jx-border)]/40 dark:from-stone-900 dark:to-stone-950",
+          isMajorDay && "border-t-2 border-t-[var(--jx-gold)]/55",
+        )}
+      >
+        <div className="mb-4 flex flex-col items-center gap-2">
+          <p className="jx-section-label text-[var(--jx-accent-cinnabar)]/80 dark:text-[var(--jx-gold)]/80">
+            {label}
+          </p>
+          {resolved.festival && isMajorDay && (
+            <FestivalTierBadge tier="major" label={resolved.festival.name} />
+          )}
+          <BuddhistDateChip day={calendarDay} />
+          {resolved.aiRecommended && (
+            <p className="text-[10px] text-[var(--jx-muted-label)]">AI 依节日推荐</p>
+          )}
+        </div>
         <blockquote className="text-xl md:text-3xl font-normal leading-relaxed tracking-wide text-[var(--jx-ink)] dark:text-stone-100">
-          {verseText}
+          {resolved.verseText}
         </blockquote>
-        {sutraTitle && (
+        {resolved.verseSource && (
           <p className="mt-6 text-sm text-[var(--muted)] italic flex items-center justify-center gap-2">
             <span className="w-4 h-px bg-[var(--jx-border)]" />
-            {sutraTitle}
+            {resolved.verseSource}
             <span className="w-4 h-px bg-[var(--jx-border)]" />
           </p>
         )}
-        {daily?.aiSummary && (
+        {resolved.aiSummary && (
           <div className="mt-8 pt-6 border-t border-[var(--jx-border)] text-left">
             <p className="text-xs font-medium text-[var(--jx-muted-label)] mb-2 tracking-wider">AI 短解读</p>
             <p className="text-sm leading-relaxed text-stone-700 dark:text-stone-300">
-              {daily.aiSummary}
+              {resolved.aiSummary}
             </p>
           </div>
         )}
         <p className="mt-8 text-xs text-[var(--jx-muted-label)]">{brandInlineLabel()}</p>
       </div>
 
-      {/* 操作链接 */}
       <div className="mt-10 flex flex-col items-center gap-5">
         <Link
           href={`/sutra/${sutraSlug}`}
-          className="text-lg font-medium text-[var(--jx-accent)] hover:underline underline-offset-4 transition-colors"
+          className="text-lg font-medium text-[var(--jx-accent)] hover:underline underline-offset-4 transition-colors cursor-pointer"
         >
           阅读全文 →
         </Link>
         <Link
+          href={calendarHref}
+          className="text-sm text-[var(--jx-muted-label)] hover:text-[var(--foreground)] underline underline-offset-4 transition-colors cursor-pointer"
+        >
+          {isMajorDay ? "查看本月佛历" : "查看佛历"}
+        </Link>
+        <Link
           href="/"
-          className="text-sm text-[var(--jx-muted-label)] hover:text-[var(--foreground)] underline underline-offset-4 transition-colors"
+          className="text-sm text-[var(--jx-muted-label)] hover:text-[var(--foreground)] underline underline-offset-4 transition-colors cursor-pointer"
         >
           返回首页
         </Link>

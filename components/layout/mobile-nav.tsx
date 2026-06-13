@@ -11,23 +11,29 @@ import {
   BookOpen,
   Bookmark,
   Bot,
+  CalendarDays,
   FileText,
   GitBranch,
   Home,
+  LogIn,
   Map,
   Menu,
   Moon,
   ScrollText,
   Search,
   Sun,
+  User,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useBrand } from "@/components/layout/brand-provider";
 import { useTheme } from "@/lib/theme/use-theme";
+import { isWechatLoginEnabled } from "@/lib/auth/feature";
 import { cn } from "@/lib/utils";
 
 const navItems: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/", label: "首页", icon: Home },
+  { href: "/calendar", label: "佛历", icon: CalendarDays },
   { href: "/canon", label: "经藏", icon: BookOpen },
   { href: "/search", label: "搜索", icon: Search },
   { href: "/dictionary", label: "辞典", icon: ScrollText },
@@ -44,7 +50,9 @@ function isNavActive(pathname: string, href: string) {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const { brandName } = useBrand();
   const { theme, toggleTheme } = useTheme();
+  const loginEnabled = isWechatLoginEnabled();
 
   return (
     <Dialog.Root>
@@ -74,7 +82,7 @@ export function MobileNav() {
               href="/"
               className="jx-hero-title text-xl tracking-[0.15em] text-[var(--jx-ink-classical)]"
             >
-              静心
+              {brandName}
             </Link>
             <Dialog.Close asChild>
               <button
@@ -108,6 +116,29 @@ export function MobileNav() {
                 </Dialog.Close>
               );
             })}
+
+            {loginEnabled ? (
+              <>
+                <Dialog.Close asChild>
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-3 px-5 py-3.5 text-base text-[var(--foreground)] hover:bg-[var(--jx-paper-deep)] transition-colors min-h-[44px]"
+                  >
+                    <LogIn className="size-4 shrink-0 opacity-70" aria-hidden="true" />
+                    微信登录
+                  </Link>
+                </Dialog.Close>
+                <Dialog.Close asChild>
+                  <Link
+                    href="/account"
+                    className="flex items-center gap-3 px-5 py-3.5 text-base text-[var(--foreground)] hover:bg-[var(--jx-paper-deep)] transition-colors min-h-[44px]"
+                  >
+                    <User className="size-4 shrink-0 opacity-70" aria-hidden="true" />
+                    个人中心
+                  </Link>
+                </Dialog.Close>
+              </>
+            ) : null}
 
             <button
               type="button"

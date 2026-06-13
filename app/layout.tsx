@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { BrandProvider } from "@/components/layout/brand-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SkipToContent } from "@/components/layout/skip-to-content";
 import { UserDataSync } from "@/components/layout/user-data-sync";
 import { brandPageTitle } from "@/lib/brand";
+import { resolveCalendarDay } from "@/lib/calendar/resolve-day";
+import { getCalendarTodayKey } from "@/lib/calendar/today";
+import { getPublicBrandName, getSiteBrand } from "@/lib/site-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +24,10 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const { brandTagline } = getSiteBrand();
+  const brandName = getPublicBrandName();
+  const today = resolveCalendarDay(getCalendarTodayKey());
+
   return (
     <html lang="zh-Hans" suppressHydrationWarning>
       <head>
@@ -34,11 +42,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen antialiased">
-        <UserDataSync />
-        <SkipToContent />
-        <SiteHeader />
-        <main id="main-content">{children}</main>
-        <SiteFooter />
+        <BrandProvider brandName={brandName} brandTagline={brandTagline} calendarDay={today}>
+          <UserDataSync />
+          <SkipToContent />
+          <SiteHeader />
+          <main id="main-content">{children}</main>
+          <SiteFooter />
+        </BrandProvider>
       </body>
     </html>
   );

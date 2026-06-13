@@ -25,6 +25,8 @@ export default defineConfig({
         env: {
           ...process.env,
           AI_MOCK: process.env.AI_MOCK ?? "1",
+          NEXT_PUBLIC_WECHAT_LOGIN_ENABLED:
+            process.env.NEXT_PUBLIC_WECHAT_LOGIN_ENABLED ?? "1",
         },
       },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

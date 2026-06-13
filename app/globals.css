@@ -728,6 +728,25 @@ body::before {
   color: var(--jx-accent-cinnabar);
 }
 
+/* ===== 佛历月历 ===== */
+
+.jx-calendar-today {
+  background: rgb(176 141 87 / 0.08);
+}
+
+.jx-calendar-selected {
+  background: var(--jx-paper-deep);
+  border-color: rgb(139 37 0 / 0.25);
+}
+
+.jx-calendar-major-day {
+  border-bottom: 2px solid rgb(176 141 87 / 0.45);
+}
+
+.dark .jx-calendar-today {
+  background: rgb(176 141 87 / 0.12);
+}
+
 /* ===== 导航 active 态 ===== */
 
 .jx-nav-active {

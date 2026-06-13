@@ -4,8 +4,7 @@ test.describe("jingxin smoke", () => {
   test("home shows title and portal hero", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("home-hero")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("heading", { name: "静心", level: 1 })).toBeVisible();
-    await expect(page.getByTestId("home-hero").getByText("JINGXIN · 静心")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "正信•经藏", level: 1 })).toBeVisible();
     await expect(page.getByTestId("home-hero").getByText("让佛经更容易读懂")).toBeVisible();
     await expect(page.getByTestId("home-stats-bar")).toBeVisible();
     await expect(page.getByTestId("home-feature-grid")).toBeVisible();
@@ -14,6 +13,12 @@ test.describe("jingxin smoke", () => {
     ).toBeVisible();
     await page.getByTestId("daily-verse-card").scrollIntoViewIfNeeded();
     await expect(page.getByTestId("daily-verse-card")).toBeVisible();
+    await expect(
+      page.getByTestId("daily-verse-card").getByTestId("buddhist-date-chip"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("daily-verse-card").getByTestId("buddhist-date-chip"),
+    ).toContainText("佛历");
   });
 
   test("search page accepts query", async ({ page }) => {

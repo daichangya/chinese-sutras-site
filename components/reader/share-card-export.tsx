@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { BRAND_NAME_EN, brandInlineLabel } from "@/lib/brand";
+import { getBrandName, getBrandSlug, brandInlineLabel } from "@/lib/brand";
 import {
   computeShareExcerptFontSize,
   SHARE_CARD_BACKGROUND,
@@ -235,7 +235,7 @@ export function ShareCardExport({
               letterSpacing: "0.08em",
             }}
           >
-            {BRAND_NAME_EN}
+            {getBrandSlug()}
           </p>
           <p
             style={{
@@ -244,7 +244,7 @@ export function ShareCardExport({
               color: SHARE_CARD_COLORS.mutedLabel,
             }}
           >
-            来自静心经典阅读
+            来自{getBrandName()}经典阅读
           </p>
         </div>
 

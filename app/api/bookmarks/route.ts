@@ -7,12 +7,14 @@ import { eq, and, desc, isNull } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { bookmark, sutra } from "@/lib/db/schema";
 import { resolveBookmarkSutraMeta } from "@/lib/bookmarks/enrich";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
 
 /** GET：获取书签列表（支持 ?sutra_id 过滤） */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const sutraId = searchParams.get("sutra_id");
   const db = getDb();
+  const user = await getCurrentUser();
 
   try {
     const baseQuery = db
@@ -31,11 +33,15 @@ export async function GET(req: Request) {
       .from(bookmark)
       .leftJoin(sutra, eq(bookmark.sutraId, sutra.id));
 
+    const userFilter = user
+      ? eq(bookmark.userId, user.id)
+      : isNull(bookmark.userId);
+
     const rows = sutraId
       ? await baseQuery
-          .where(eq(bookmark.sutraId, sutraId))
+          .where(and(userFilter, eq(bookmark.sutraId, sutraId)))
           .orderBy(desc(bookmark.createdAt))
-      : await baseQuery.orderBy(desc(bookmark.createdAt));
+      : await baseQuery.where(userFilter).orderBy(desc(bookmark.createdAt));
 
     const items = rows.map((row) => {
       const meta = resolveBookmarkSutraMeta(row.sutraSlug, row.sutraTitle, row.sutraCbetaId);
@@ -59,8 +65,14 @@ export async function GET(req: Request) {
   }
 }
 
-/** 构建匿名/指定用户的 userId 匹配条件 */
-function userMatch(userId: string | null | undefined) {
+/** 构建匿名/指定用户的 userId 匹配条件（禁止伪造他人 userId） */
+async function resolveBookmarkUserId(requestedUserId?: string | null): Promise<string | null> {
+  const user = await getCurrentUser();
+  if (user) return user.id;
+  return null;
+}
+
+function userMatch(userId: string | null) {
   if (userId) return eq(bookmark.userId, userId);
   return isNull(bookmark.userId);
 }
@@ -75,7 +87,7 @@ export async function POST(req: Request) {
       sutra_id,
       paragraph_index,
       content,
-      userId,
+      userId: requestedUserId,
     }: {
       sutra_id?: string;
       paragraph_index?: number;
@@ -90,7 +102,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // 检查是否已存在
+    const userId = await resolveBookmarkUserId(requestedUserId);
+    if (requestedUserId && !userId) {
+      return NextResponse.json({ error: "Unauthorized userId" }, { status: 403 });
+    }
+
     const existing = await db
       .select()
       .from(bookmark)
@@ -139,7 +155,7 @@ export async function DELETE(req: Request) {
       id,
       sutra_id,
       paragraph_index,
-      userId,
+      userId: requestedUserId,
     }: {
       id?: string;
       sutra_id?: string;
@@ -154,10 +170,19 @@ export async function DELETE(req: Request) {
       );
     }
 
+    const userId = await resolveBookmarkUserId(requestedUserId);
+    if (requestedUserId && !userId) {
+      return NextResponse.json({ error: "Unauthorized userId" }, { status: 403 });
+    }
+
     if (id) {
       const deleted = await db
         .delete(bookmark)
-        .where(eq(bookmark.id, id))
+        .where(
+          userId
+            ? and(eq(bookmark.id, id), eq(bookmark.userId, userId))
+            : and(eq(bookmark.id, id), isNull(bookmark.userId)),
+        )
         .returning();
       if (deleted.length === 0) {
         return NextResponse.json({ error: "书签不存在" }, { status: 404 });

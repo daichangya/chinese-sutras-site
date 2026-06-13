@@ -1,13 +1,36 @@
 import { NextResponse } from "next/server";
 import { chatCompletion } from "@/lib/ai/gateway";
 import { buildDailySummaryPrompt } from "@/lib/ai/prompts";
+import { recommendFestivalVerse } from "@/lib/calendar/recommend-verse";
 import { getSqlite } from "@/lib/db";
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as { verseText?: string; sutraTitle?: string; verseDate?: string };
+  const body = (await req.json()) as {
+    verseText?: string;
+    sutraTitle?: string;
+    verseDate?: string;
+    festivalId?: string;
+  };
   const verseText = body.verseText?.trim();
   const sutraTitle = body.sutraTitle ?? "";
   const verseDate = body.verseDate ?? new Date().toISOString().slice(0, 10);
+  const festivalId = body.festivalId?.trim();
+
+  if (festivalId) {
+    try {
+      const rec = await recommendFestivalVerse(festivalId, verseDate);
+      return NextResponse.json({
+        summary: rec.aiSummary,
+        verseText: rec.verseText,
+        verseSource: rec.verseSource,
+        cached: false,
+        festival: true,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "festival recommend failed";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
 
   if (!verseText) {
     return NextResponse.json({ error: "verseText required" }, { status: 400 });

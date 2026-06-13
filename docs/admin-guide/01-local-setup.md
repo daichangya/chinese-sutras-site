@@ -74,12 +74,32 @@ CBETA_XML_DIR=./vendor/xml-p5
 | 变量 | 说明 |
 |------|------|
 | `DATA_DIR` | SQLite 与数据文件目录，默认 `./data` |
+| `jingxin.db` | 语料 / 辞典 / 图谱等业务主库（`db:migrate` 创建） |
+| `jingxin-auth.db` | 账号与会话独立库（用户 / OAuth / Session，便于单独备份与管理） |
+| `jingxin-search.db` | 段落 FTS 检索库 |
 | `AI_GATEWAY_URL` | OpenAI 兼容 Chat Completions 端点 |
 | `AI_GATEWAY_API_KEY` | API 密钥 |
 | `AI_MODEL` | 模型名称 |
 | `CBETA_XML_DIR` | 从 XML 生成语料时使用 |
 
+站点用户可见名称可在 [`lib/site-config.ts`](../../lib/site-config.ts) 修改默认值，或通过 `SITE_BRAND_NAME`、`SITE_BRAND_TAGLINE` 等环境变量覆盖（见 `.env.example`）。
+
 未配置 AI 时，阅读解释与 Chat 功能不可用，其余功能正常。
+
+### 微信登录（可选，默认关闭）
+
+| 变量 | 说明 |
+|------|------|
+| `NEXT_PUBLIC_WECHAT_LOGIN_ENABLED` | 设为 `1` 才显示登录入口并开放 OAuth（默认未设置=关闭） |
+| `NEXT_PUBLIC_SITE_URL` | 站点公网 URL（OAuth 回调、Cookie） |
+| `AUTH_SESSION_SECRET` | Session 签名密钥（生产必填，32+ 字节随机串） |
+| `AUTH_SESSION_TTL_DAYS` | 会话有效期（天），默认 30 |
+| `WECHAT_OPEN_APP_ID` / `SECRET` | [微信开放平台](https://open.weixin.qq.com) 网站应用（PC 扫码） |
+| `WECHAT_MP_APP_ID` / `SECRET` | [微信公众平台](https://mp.weixin.qq.com) 服务号（微信内网页授权） |
+| `NEXT_PUBLIC_WECHAT_OPEN_APP_ID` | 与开放平台 AppID 相同，供登录页 QR 组件 |
+| `AUTH_MOCK_WECHAT=1` | 开发环境启用 `/api/auth/wechat/mock` 模拟登录 |
+
+开放平台与公众号需绑定同一主体以获取 **UnionID**。本地开发可设 `AUTH_MOCK_WECHAT=1` 跳过真实微信。
 
 ---
 

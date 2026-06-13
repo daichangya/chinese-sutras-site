@@ -3,6 +3,7 @@
  * @author 代长亚
  */
 import Link from "next/link";
+import { getBrandName } from "@/lib/brand";
 import {
   BookOpen,
   Bot,
@@ -56,7 +57,7 @@ export function HomeFeatureCards({ compact = false }: { compact?: boolean }) {
     <section className={compact ? "mt-8 w-full" : "mx-auto max-w-4xl px-4 py-10 md:py-14"}>
       {!compact && (
         <div className="mb-6 flex items-center gap-3">
-          <p className="jx-section-label">探索静心</p>
+          <p className="jx-section-label">探索{getBrandName()}</p>
           <div className="h-px flex-1 bg-gradient-to-r from-[var(--jx-border)]/40 to-transparent" />
         </div>
       )}

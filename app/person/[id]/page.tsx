@@ -19,6 +19,7 @@ import { parseEntityProperties } from "@/lib/kg/display";
 import { entityDetailPath, entityIdToSlug, personPath } from "@/lib/kg/slug";
 import { isHeuristicPersonId } from "@/lib/kg/visibility";
 import { getSqlite } from "@/lib/db";
+import { brandPageTitleSuffix } from "@/lib/brand";
 
 export const revalidate = 3600;
 
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const personId = await resolvePersonId(id);
   const person = personId ? findPersonById(personId) : null;
   return {
-    title: person ? `${person.name_zh} | 静心` : "人物 | 静心",
+    title: person ? `${person.name_zh} | ${brandPageTitleSuffix()}` : `人物 | ${brandPageTitleSuffix()}`,
     description: person
       ? `${person.name_zh} — 汉传佛教知识图谱人物条目`
       : "佛教人物知识条目",

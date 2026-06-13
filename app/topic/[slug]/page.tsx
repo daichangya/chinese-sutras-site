@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BookOpen } from "lucide-react";
 import { getSqlite } from "@/lib/db";
+import { brandPageTitleSuffix } from "@/lib/brand";
 
 export const revalidate = 3600;
 
@@ -16,9 +17,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const topic = db
     .prepare(`SELECT title, description FROM topic WHERE slug = ?`)
     .get(slug) as { title: string; description: string } | undefined;
-  if (!topic) return { title: "专题 | 静心" };
+  if (!topic) return { title: `专题 | ${brandPageTitleSuffix()}` };
   return {
-    title: `${topic.title}专题 | 静心`,
+    title: `${topic.title}专题 | ${brandPageTitleSuffix()}`,
     description: topic.description,
   };
 }
