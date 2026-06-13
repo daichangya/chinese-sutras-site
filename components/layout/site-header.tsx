@@ -49,7 +49,7 @@ export function SiteHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b transition-colors jx-ui-shell",
+        "sticky top-0 z-50 flex flex-col border-b transition-colors jx-ui-shell",
         isHome
           ? scrolled
             ? "border-[var(--jx-border)]/30 bg-[var(--background)]/90 backdrop-blur-md"
@@ -58,17 +58,20 @@ export function SiteHeader() {
       )}
       style={{ height: "var(--jx-header-height)" }}
     >
-      <div className="jx-shell flex h-full items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
+      <div
+        className="jx-shell flex shrink-0 items-center justify-between"
+        style={{ height: "var(--jx-header-main-height)" }}
+      >
+        <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/"
-            className="jx-hero-title flex items-center gap-2 text-xl tracking-[0.15em] text-[var(--jx-ink-classical)] md:text-2xl shrink-0"
+            className="jx-hero-title flex shrink-0 items-center gap-2 text-xl tracking-[0.15em] text-[var(--jx-ink-classical)] md:text-2xl"
             aria-label={`${brandName} - 返回首页`}
           >
             {brandName}
           </Link>
           {calendarDay && (
-            <BuddhistDateChip day={calendarDay} compact className="min-w-0" />
+            <BuddhistDateChip day={calendarDay} placement="inline" className="min-w-0" />
           )}
         </div>
 
@@ -102,6 +105,12 @@ export function SiteHeader() {
 
         <MobileNav />
       </div>
+
+      {calendarDay && (
+        <div data-testid="calendar-sub-bar" className="shrink-0 md:hidden">
+          <BuddhistDateChip day={calendarDay} placement="subbar" />
+        </div>
+      )}
     </header>
   );
 }

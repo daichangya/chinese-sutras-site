@@ -30,4 +30,15 @@ test.describe("buddhist calendar", () => {
     await expect(chip).toBeVisible({ timeout: 15000 });
     await expect(chip).toContainText("佛历");
   });
+
+  test("mobile header shows calendar sub-bar", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const subBar = page.getByTestId("calendar-sub-bar");
+    await expect(subBar).toBeVisible({ timeout: 15000 });
+    await expect(subBar.getByTestId("buddhist-date-chip")).toContainText("佛历");
+    await expect(
+      page.locator("header .jx-shell").first().getByTestId("buddhist-date-chip"),
+    ).toBeHidden();
+  });
 });

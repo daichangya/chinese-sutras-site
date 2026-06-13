@@ -94,7 +94,9 @@
   --jx-leading: 1.8;
   --jx-measure: 38rem;
   --jx-sidebar-width: 17.5rem;
-  --jx-header-height: 52px;
+  --jx-header-main-height: 52px;
+  --jx-header-sub-height: 36px;
+  --jx-header-height: 88px;
   --jx-paper: #f8f5ef;
   --jx-paper-deep: #f0ebe2;
   --jx-paper-elevated: #fffefb;
@@ -741,6 +743,38 @@ body::before {
 
 .jx-calendar-major-day {
   border-bottom: 2px solid rgb(176 141 87 / 0.45);
+}
+
+.jx-calendar-sub-bar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid rgb(217 208 193 / 0.4);
+  background: rgb(255 254 251 / 0.7);
+  padding: 0.5rem 1rem;
+  font-family: var(--jx-ui-font);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: var(--jx-muted-label);
+  transition: color 0.2s ease, background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.jx-calendar-sub-bar:hover {
+  color: var(--foreground);
+  background: var(--jx-paper-deep);
+}
+
+.dark .jx-calendar-sub-bar {
+  border-top-color: rgb(41 37 36 / 0.6);
+  background: rgb(28 25 23 / 0.55);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --jx-header-height: var(--jx-header-main-height);
+  }
 }
 
 .dark .jx-calendar-today {

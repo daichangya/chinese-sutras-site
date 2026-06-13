@@ -54,7 +54,7 @@ export function DailyVerseCard({
         </div>
       )}
 
-      <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+      <div className="flex flex-col gap-2 mb-5 md:flex-row md:flex-wrap md:items-center md:gap-3">
         <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wider text-[var(--jx-accent-cinnabar)]/80 dark:text-[var(--jx-gold)]/80">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--jx-accent-cinnabar)]/60 animate-pulse" />
           {label}
