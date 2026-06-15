@@ -7,6 +7,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   BookOpen,
   Bookmark,
@@ -52,7 +53,13 @@ export function MobileNav() {
   const pathname = usePathname();
   const { brandName } = useBrand();
   const { theme, toggleTheme } = useTheme();
-  const loginEnabled = isWechatLoginEnabled();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const loginEnabled = mounted && isWechatLoginEnabled();
 
   return (
     <Dialog.Root>

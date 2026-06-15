@@ -5,12 +5,12 @@
 import crypto from "crypto";
 import { XMLParser } from "fast-xml-parser";
 import { extractDirDisambiguatorFromXml } from "@/lib/corpus-v3/dir-disambiguator";
-import { filterPrefaceParagraphs } from "./preface-filter";
+import { deriveBlockRole, type BlockRole } from "./block-role";
+import { BODY_START_ANCHORS, PREFACE_MARKERS } from "./preface-filter-anchors";
 import {
   extractParagraphAnchorSpans,
   extractTeiTitle,
   extractTeiTranslator,
-  type ParsedParagraph,
 } from "./parser";
 
 export type BlockKind = "prose" | "verse";
@@ -23,6 +23,7 @@ export type StructureBlock = {
   xmlId?: string;
   /** 本块所属品目标题（仅在该品目首块上设置） */
   sectionTitle?: string;
+  blockRole: BlockRole;
   canonicalId: string;
   contentHash: string;
   parserPid: string;
@@ -72,7 +73,7 @@ const SKIP_TAGS = new Set([
 const CHOICE_PREFERRED = ["corr", "reg"] as const;
 const CHOICE_FALLBACK = ["sic", "orig"] as const;
 
-type BlockContext = { juan: number; section?: string };
+type BlockContext = { juan: number; section?: string; divType?: string };
 
 function hashText(text: string): string {
   return crypto.createHash("sha1").update(text, "utf-8").digest("hex").slice(0, 12);
@@ -225,6 +226,7 @@ function buildBlockContextMap(xml: string): {
   const byXmlId = new Map<string, BlockContext>();
   let juan = 0;
   let section: string | undefined;
+  let divType: string | undefined;
   const tagRe = /<[^>]+>/g;
   let m: RegExpExecArray | null;
 
@@ -241,6 +243,12 @@ function buildBlockContextMap(xml: string): {
     if (tag.startsWith("<milestone") && tag.includes('unit="juan"')) {
       const n = tag.match(/\bn=\"(\d+)\"/)?.[1];
       if (n) juan = parseInt(n, 10);
+      continue;
+    }
+
+    if (tag.startsWith("<cb:div")) {
+      const type = tag.match(/\btype=\"([^\"]+)\"/)?.[1];
+      if (type) divType = type;
       continue;
     }
 
@@ -264,13 +272,13 @@ function buildBlockContextMap(xml: string): {
 
     if (tag.startsWith("<p")) {
       const xmlId = tag.match(/\bxml:id=\"([^\"]+)\"/)?.[1];
-      if (xmlId) byXmlId.set(xmlId, { juan, section });
+      if (xmlId) byXmlId.set(xmlId, { juan, section, divType });
       continue;
     }
 
     if (tag.startsWith("<l") && !tag.startsWith("<lb") && !tag.startsWith("<lg")) {
       const xmlId = tag.match(/\bxml:id=\"([^\"]+)\"/)?.[1];
-      if (xmlId) byXmlId.set(xmlId, { juan, section });
+      if (xmlId) byXmlId.set(xmlId, { juan, section, divType });
     }
   }
 
@@ -296,6 +304,7 @@ type RawBlock = {
   xmlId?: string;
   juan: number;
   section?: string;
+  divType?: string;
 };
 
 function walkBodyForBlocks(
@@ -332,6 +341,7 @@ function walkBodyForBlocks(
           xmlId: idStr,
           juan: bc?.juan ?? defaultJuan,
           section: bc?.section,
+          divType: bc?.divType,
         });
       }
     } else if (key === "lg") {
@@ -349,6 +359,7 @@ function walkBodyForBlocks(
           xmlId: idStr,
           juan: bc?.juan ?? defaultJuan,
           section: bc?.section,
+          divType: bc?.divType,
         });
       }
     } else if (key === "l") {
@@ -366,6 +377,7 @@ function walkBodyForBlocks(
           xmlId: idStr,
           juan: bc?.juan ?? defaultJuan,
           section: bc?.section,
+          divType: bc?.divType,
         });
       }
     } else if (key === "item") {
@@ -384,6 +396,7 @@ function walkBodyForBlocks(
           xmlId: idStr,
           juan,
           section: bc?.section,
+          divType: bc?.divType,
         });
       }
     } else if (typeof val === "object") {
@@ -421,20 +434,18 @@ export function parseCbetaStructure(
   const rawBlocks: RawBlock[] = [];
   walkBodyForBlocks(body, ctxMap, defaultJuan, anchorSpans, rawBlocks);
 
-  // stripPreface via existing filter on prose-only seq
+  // stripPreface：按正文锚点或序文标记剔除（勿用 filter 重排后的 seq 作块索引）
   let filteredRaw = rawBlocks;
   if (options.stripPreface !== false) {
-    const asParsed: ParsedParagraph[] = rawBlocks.map((b, i) => ({
-      chapterSeq: 0,
-      seq: i + 1,
-      text: b.text,
-      startRef: b.startRef,
-      endRef: b.endRef,
-      xmlId: b.xmlId,
-    }));
-    const kept = filterPrefaceParagraphs(asParsed, cbetaId, true);
-    const keptSet = new Set(kept.map((p) => p.seq));
-    filteredRaw = rawBlocks.filter((_, i) => keptSet.has(i + 1));
+    const anchor = BODY_START_ANCHORS[cbetaId];
+    if (anchor) {
+      const idx = rawBlocks.findIndex((b) => b.text.includes(anchor));
+      if (idx > 0) filteredRaw = rawBlocks.slice(idx);
+    } else if (rawBlocks.some((b) => PREFACE_MARKERS.some((m) => b.text.includes(m)))) {
+      filteredRaw = rawBlocks.filter(
+        (b) => !PREFACE_MARKERS.some((m) => b.text.includes(m)),
+      );
+    }
   }
 
   const juansMap = new Map<number, RawBlock[]>();
@@ -472,6 +483,11 @@ export function parseCbetaStructure(
         endRef: b.endRef,
         xmlId: b.xmlId,
         sectionTitle,
+        blockRole: deriveBlockRole({
+          divType: b.divType,
+          section: b.section,
+          kind: b.kind,
+        }),
         canonicalId,
         contentHash: hashText(b.text),
         parserPid: `p${String(globalSeq).padStart(6, "0")}`,

@@ -29,13 +29,15 @@ test.describe("fojin parity routes", () => {
   test("reader page shows labeled toolbar", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/sutra/chang-a-han-jing", { waitUntil: "domcontentloaded" });
-    const toolbar = page.getByTestId("reader-toolbar");
+    const fab = page.getByTestId("reader-fab");
     const notFound = page.getByRole("heading", { name: /未找到|404/i });
-    await expect(toolbar.or(notFound)).toBeVisible({ timeout: 15000 });
-    if (await toolbar.isVisible()) {
-      await expect(toolbar).toBeVisible();
+    await expect(fab.or(notFound)).toBeVisible({ timeout: 15000 });
+    if (await fab.isVisible()) {
+      await expect(fab).toBeVisible();
       await expect(page.getByTestId("reader-comprehension-panel")).toBeVisible();
-      await expect(page.getByTestId("reader-settings-menu")).toBeVisible();
+      await page.getByTestId("reader-fab-toggle").click();
+      await page.getByTestId("reader-settings-menu").click();
+      await expect(page.getByTestId("reader-settings-panel")).toBeVisible();
       await expect(page.getByTestId("reader-tool-toc")).toBeHidden();
       await expect(page.getByTestId("reader-tool-comprehension")).toBeHidden();
     } else {

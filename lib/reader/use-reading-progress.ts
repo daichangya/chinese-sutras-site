@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 const USER_KEY_STORAGE = "jingxin-device-id";
 
@@ -34,28 +34,6 @@ export function useReadingProgress({
   sutraTitle: string;
   activeParagraphId?: string;
 }) {
-  const restoredRef = useRef(false);
-
-  useEffect(() => {
-    if (restoredRef.current) return;
-    const userKey = getUserKey();
-    fetch(
-      `/api/reading/progress?userKey=${encodeURIComponent(userKey)}&sutraId=${encodeURIComponent(sutraId)}`,
-    )
-      .then((r) => r.json())
-      .then((data: { progress?: { paragraphId: string } | null }) => {
-        if (restoredRef.current || !data.progress?.paragraphId) return;
-        const target = document.querySelector(
-          `[data-paragraph-id="${data.progress.paragraphId}"]`,
-        );
-        if (target) {
-          target.scrollIntoView({ behavior: "smooth", block: "start" });
-          restoredRef.current = true;
-        }
-      })
-      .catch(() => {});
-  }, [sutraId]);
-
   useEffect(() => {
     if (!activeParagraphId) return;
     const userKey = getUserKey();

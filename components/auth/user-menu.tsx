@@ -12,13 +12,23 @@ import { isWechatLoginEnabled } from "@/lib/auth/feature";
 import { cn } from "@/lib/utils";
 
 export function UserMenu({ compact }: { compact?: boolean }) {
-  const loginEnabled = isWechatLoginEnabled();
+  const [mounted, setMounted] = useState(false);
   const [session, setSession] = useState<AuthSessionResponse | null>(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetchAuthSession().then(setSession).catch(() => setSession({ loggedIn: false, user: null }));
+    setMounted(true);
+    fetchAuthSession()
+      .then(setSession)
+      .catch(() => setSession({ loggedIn: false, user: null }));
   }, []);
+
+  // 挂载前保持 SSR 与首屏一致，避免登录入口与顶栏后续节点 hydration 错位
+  if (!mounted) {
+    return null;
+  }
+
+  const loginEnabled = isWechatLoginEnabled();
 
   async function handleLogout() {
     await logout();

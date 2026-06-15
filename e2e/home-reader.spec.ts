@@ -63,13 +63,18 @@ test.describe("jingxin smoke", () => {
       return;
     }
     await expect(page.locator("article#reader-content")).toBeVisible();
-    await expect(page.getByTestId("reader-toolbar")).toBeVisible();
+    const article = page.locator("article#reader-content");
+    const firstBodyParagraph = article.locator("p.jx-paragraph-opening, p:not(.jx-paragraph-preface)").first();
+    await expect(firstBodyParagraph).toContainText(/观自在|觀自在/);
+    await expect(article).not.toContainText("二仪久判");
+    await expect(page.getByTestId("reader-fab")).toBeVisible();
     await expect(page.getByTestId("reader-comprehension-panel")).toBeVisible();
+    await page.getByTestId("reader-fab-toggle").click();
     await expect(page.getByTestId("reader-tool-comprehension")).toBeHidden();
     await expect(page.getByTestId("reader-tool-toc")).toBeHidden();
   });
 
-  test("reader selection triggers AI modern explanation", async ({ page }) => {
+  test("reader selection syncs to panel without auto AI until explicit action", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/sutra/xinjing", { waitUntil: "domcontentloaded" });
     const notFound = await page.getByText("404").isVisible().catch(() => false);
@@ -88,9 +93,42 @@ test.describe("jingxin smoke", () => {
     await expect(page.getByTestId("reader-ai-selection")).toContainText("观自在", {
       timeout: 5000,
     });
-    await expect(page.getByTestId("reader-ai-modern")).not.toHaveText("加载中…", {
+    await expect(page.getByTestId("reader-ai-modern")).toContainText("切换到本标签");
+
+    await page.locator("#reader-content").click({ button: "right" });
+    await page.getByTestId("reader-context-explain").click();
+    await expect(page.getByTestId("reader-ai-modern")).not.toContainText("切换到本标签", {
       timeout: 20000,
     });
+  });
+
+  test("reader toc navigates paragraph and updates highlight", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/sutra/xinjing", { waitUntil: "domcontentloaded" });
+    const notFound = await page.getByText("404").isVisible().catch(() => false);
+    if (notFound) {
+      test.skip();
+      return;
+    }
+
+    const sidebar = page.getByTestId("reader-toc-sidebar");
+    await expect(sidebar).toBeVisible();
+    const tocItems = page.getByTestId("reader-toc-paragraphs").locator("button");
+    const count = await tocItems.count();
+    if (count < 2) {
+      test.skip();
+      return;
+    }
+
+    const target = tocItems.nth(1);
+    const testId = await target.getAttribute("data-testid");
+    const seqMatch = testId?.match(/reader-toc-item-(\d+)/);
+    expect(seqMatch).toBeTruthy();
+    const seq = seqMatch![1];
+
+    await target.click();
+    await expect(page.locator(`#p-${seq}`)).toBeInViewport({ timeout: 5000 });
+    await expect(target).toHaveClass(/font-medium/);
   });
 
   test("copybook flow when xinjing imported", async ({ page }) => {
@@ -102,8 +140,12 @@ test.describe("jingxin smoke", () => {
       test.skip();
       return;
     }
-    await page.getByTestId("reader-copybook-link").click();
-    await expect(page).toHaveURL(/\/sutra\/xinjing\/copybook/);
+    await page.getByTestId("reader-fab-toggle").click();
+    await expect(page.getByTestId("reader-fab-actions")).toBeVisible();
+    await Promise.all([
+      page.waitForURL(/\/sutra\/xinjing\/copybook/, { timeout: 15000 }),
+      page.getByTestId("reader-copybook-link").click(),
+    ]);
     await expect(page.getByTestId("copybook-config")).toBeVisible();
     await page.getByTestId("copybook-write-mode").selectOption("miaohong");
     await page.getByTestId("copybook-generate").click();

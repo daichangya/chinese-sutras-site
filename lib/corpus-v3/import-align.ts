@@ -5,6 +5,7 @@
 import fs from "fs";
 import path from "path";
 import { t2s } from "@/lib/han";
+import type { BlockRole } from "@/lib/cbeta/block-role";
 import { parseCbetaStructure, normalizeTextForCompare, type StructureJuan } from "@/lib/cbeta/structure";
 import { DIR_BAIHUA, DIR_JIANTI_LEGACY, DIR_YUANWEN, DIR_ZHUSHI } from "./corpus-dirs";
 import {
@@ -15,6 +16,7 @@ import {
 import { findSutraMetaFiles, loadSutraMeta, sutraRootFromMetaPath } from "./meta";
 import { juanSortKey, listJuanMdFiles, parseReadableParagraphs, readMdIfExists } from "./markdown";
 import { resolveSutraSlug } from "./slug";
+import { inferBlockRolesForParagraphs } from "./infer-block-role";
 import type { ImportChapter } from "./types";
 import type { CharReading } from "@/lib/pinyin/types";
 
@@ -26,6 +28,7 @@ export type ImportParagraph = {
   parserPid: string | null;
   contentHash: string | null;
   juanSeq: number;
+  blockRole: BlockRole;
   /** 正文简体中文 */
   text: string;
   colloquial: string | null;
@@ -151,6 +154,7 @@ function alignJuanParagraphs(
       parserPid: idxEntry?.parser_pid ?? xmlBlock?.parserPid ?? null,
       contentHash: idxEntry?.content_hash ?? xmlBlock?.contentHash ?? null,
       juanSeq,
+      blockRole: idxEntry?.block_role ?? xmlBlock?.blockRole ?? "body",
       text: textSimplified,
       colloquial: colloquials[j]?.trim() || null,
       commentary: commentaries[j]?.trim() || null,
@@ -237,6 +241,7 @@ export function buildImportBundle(opts: AlignOptions): ImportSutraBundle {
       parser_pid: b.parserPid,
       juan_num: juanNum,
       kind: b.kind,
+      block_role: b.blockRole,
     }));
 
     const xmlJuan = xmlJuans?.find((x) => (x.juanNum > 0 ? x.juanNum : 0) === juanNum);
@@ -256,6 +261,12 @@ export function buildImportBundle(opts: AlignOptions): ImportSutraBundle {
     globalSeq = result.nextSeq;
   }
 
+  const roles = inferBlockRolesForParagraphs(paragraphs, meta.cbetaId);
+  const withRoles = paragraphs.map((p, i) => ({
+    ...p,
+    blockRole: roles[i] ?? p.blockRole,
+  }));
+
   return {
     cbetaId: meta.cbetaId,
     slug,
@@ -263,7 +274,7 @@ export function buildImportBundle(opts: AlignOptions): ImportSutraBundle {
     translator: meta.translator ?? null,
     category: meta.category,
     chapters,
-    paragraphs,
+    paragraphs: withRoles,
     warnings,
   };
 }

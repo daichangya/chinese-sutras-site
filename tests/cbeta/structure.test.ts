@@ -68,4 +68,19 @@ describe("parseCbetaStructure", () => {
     expect(verse).toMatch(/ \//);
     expect(verse).not.toMatch(/分別法界義；名號/);
   });
+
+  it("strips preface blocks before body anchor when stripPreface=true", () => {
+    const fixture = "tests/fixtures/T08n0251.xml";
+    if (!fs.existsSync(fixture)) {
+      console.warn("Skip: T08n0251 fixture missing");
+      return;
+    }
+    const xml = fs.readFileSync(fixture, "utf-8");
+    const result = parseCbetaStructure(xml, "T08n0251", { stripPreface: true });
+    const blocks = result.juans[0]?.blocks ?? [];
+    expect(blocks.length).toBeGreaterThan(0);
+    expect(blocks[0]!.text).toContain("觀自在菩薩");
+    expect(blocks.some((b) => b.text.includes("二儀久判"))).toBe(false);
+    expect(blocks.every((b) => b.blockRole === "body" || b.blockRole === "verse")).toBe(true);
+  });
 });

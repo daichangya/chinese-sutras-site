@@ -2,6 +2,8 @@
  * 经文查询（高配直读 DB 正文；低内存 / slim 从语料 MD hydrate）
  * @author 代长亚
  */
+import type { BlockRole } from "@/lib/cbeta/block-role";
+import { isAuxiliaryBlockRole, isReaderBodyRole } from "@/lib/cbeta/block-role";
 import { getMvpCbetaIdBySlug, getMvpSlugByCbetaId } from "@/lib/cbeta/mvp-canon";
 import { getSqlite } from "@/lib/db";
 import { isLowMemoryDeploy } from "@/lib/deploy/profile";
@@ -11,6 +13,7 @@ import {
   paragraphSelectSql,
   requireParagraphTextColumn,
 } from "@/lib/db/paragraph-schema";
+import { inferBlockRolesForParagraphs } from "@/lib/corpus-v3/infer-block-role";
 import {
   cbetaIdFromCanonicalId,
   CorpusNotAvailableError,
@@ -36,6 +39,12 @@ export type ParagraphRow = {
   seq: number;
   text: string;
   colloquial: string | null;
+  blockRole: BlockRole | null;
+};
+
+export type GetParagraphsOptions = {
+  /** 是否包含序跋等辅助段落（默认 false，仅正文/偈） */
+  includeAuxiliary?: boolean;
 };
 
 export type ChapterRow = {
@@ -51,6 +60,7 @@ type ParagraphIdentityRow = {
   chapterSeq: number;
   seq: number;
   colloquial: string | null;
+  blockRole?: string | null;
   text?: string;
 };
 
@@ -66,11 +76,68 @@ function paragraphRowFromIdentity(r: ParagraphIdentityRow): ParagraphRow {
     seq: r.seq,
     text: r.text ?? "",
     colloquial: r.colloquial,
+    blockRole: (r.blockRole as BlockRole | null) ?? null,
   };
 }
 
+function paragraphHasBlockRoleColumn(db: ReturnType<typeof getSqlite>): boolean {
+  const cols = db.prepare(`PRAGMA table_info(paragraph)`).all() as Array<{ name: string }>;
+  return cols.some((c) => c.name === "block_role");
+}
+
+function filterParagraphsForReader(
+  rows: ParagraphRow[],
+  options?: GetParagraphsOptions,
+): ParagraphRow[] {
+  if (options?.includeAuxiliary) return rows;
+  return rows.filter((p) => isReaderBodyRole(p.blockRole));
+}
+
 function paragraphColsSql(db: ReturnType<typeof getSqlite>): string {
-  return shouldUseDbTextPath(db) ? paragraphSelectSql() : paragraphIdentitySelectSql();
+  const hasRole = paragraphHasBlockRoleColumn(db);
+  const identity = hasRole
+    ? paragraphIdentitySelectSql()
+    : `id, sutra_id as sutraId, juan_seq as chapterSeq, seq, colloquial, NULL as blockRole`;
+  const withText = `${identity}, text`;
+  return shouldUseDbTextPath(db) ? withText : identity;
+}
+
+function fetchParagraphRows(sutraId: string, juanSeq?: number): ParagraphIdentityRow[] {
+  return juanSeq !== undefined
+    ? selectParagraphRows(
+        `SELECT PARAGRAPH_COLS FROM paragraph WHERE sutra_id = ? AND juan_seq = ? ORDER BY seq`,
+        sutraId,
+        juanSeq,
+      )
+    : selectParagraphRows(
+        `SELECT PARAGRAPH_COLS FROM paragraph WHERE sutra_id = ? ORDER BY juan_seq, seq`,
+        sutraId,
+      );
+}
+
+function ensureBlockRoles(rows: ParagraphRow[], cbetaId: string | null): ParagraphRow[] {
+  if (!cbetaId || rows.length === 0) return rows;
+  if (rows.every((r) => r.blockRole)) return rows;
+  const roles = inferBlockRolesForParagraphs(
+    rows.map((r) => ({ text: r.text, blockRole: r.blockRole })),
+    cbetaId,
+  );
+  return rows.map((r, i) => ({
+    ...r,
+    blockRole: r.blockRole ?? roles[i] ?? "body",
+  }));
+}
+
+function mapParagraphRows(
+  rows: ParagraphIdentityRow[],
+  sutraId: string,
+  db: ReturnType<typeof getSqlite>,
+): ParagraphRow[] {
+  const cbetaId = getCbetaIdForSutra(sutraId);
+  const mapped = shouldUseDbTextPath(db)
+    ? rows.map((r) => paragraphRowFromIdentity(r))
+    : hydrateParagraphs(rows, cbetaId);
+  return ensureBlockRoles(mapped, cbetaId);
 }
 
 function selectParagraphRows(
@@ -118,6 +185,7 @@ function hydrateParagraphs(
       seq: r.seq,
       text: body?.text ?? r.text ?? "",
       colloquial: r.colloquial ?? body?.colloquial ?? null,
+      blockRole: (r.blockRole as BlockRole | null) ?? null,
     };
   });
 }
@@ -147,25 +215,23 @@ function withPreferredSlug(row: SutraRow, requestedSlug?: string): SutraRow {
   return slug === row.slug ? row : { ...row, slug };
 }
 
-export function getParagraphsForSutra(sutraId: string, juanSeq?: number): ParagraphRow[] {
+export function getParagraphsForSutra(
+  sutraId: string,
+  juanSeq?: number,
+  options?: GetParagraphsOptions,
+): ParagraphRow[] {
   const db = getSqlite();
-  const rows =
-    juanSeq !== undefined
-      ? selectParagraphRows(
-          `SELECT PARAGRAPH_COLS FROM paragraph WHERE sutra_id = ? AND juan_seq = ? ORDER BY seq`,
-          sutraId,
-          juanSeq,
-        )
-      : selectParagraphRows(
-          `SELECT PARAGRAPH_COLS FROM paragraph WHERE sutra_id = ? ORDER BY juan_seq, seq`,
-          sutraId,
-        );
+  const rows = mapParagraphRows(fetchParagraphRows(sutraId, juanSeq), sutraId, db);
+  return filterParagraphsForReader(rows, options);
+}
 
-  if (shouldUseDbTextPath(db)) {
-    return rows.map((r) => paragraphRowFromIdentity(r));
-  }
-
-  return hydrateParagraphs(rows, getCbetaIdForSutra(sutraId));
+export function getAuxiliaryParagraphsForSutra(
+  sutraId: string,
+  juanSeq?: number,
+): ParagraphRow[] {
+  const db = getSqlite();
+  const rows = mapParagraphRows(fetchParagraphRows(sutraId, juanSeq), sutraId, db);
+  return rows.filter((p) => isAuxiliaryBlockRole(p.blockRole));
 }
 
 export function listChaptersForSutra(sutraId: string): ChapterRow[] {
@@ -247,18 +313,27 @@ export function countParagraphsForSutra(sutraId: string): number {
 
 export function getParagraphById(id: string): ParagraphRow | null {
   const db = getSqlite();
+  const hasRole = paragraphHasBlockRoleColumn(db);
 
   if (shouldUseDbTextPath(db)) {
     requireParagraphTextColumn(db);
-    const row = db
-      .prepare(`SELECT ${paragraphSelectSql()} FROM paragraph WHERE id = ?`)
-      .get(id) as ParagraphIdentityRow | undefined;
+    const cols = hasRole
+      ? paragraphSelectSql()
+      : `id, sutra_id as sutraId, juan_seq as chapterSeq, seq, colloquial, NULL as blockRole, text`;
+    const row = db.prepare(`SELECT ${cols} FROM paragraph WHERE id = ?`).get(id) as
+      | ParagraphIdentityRow
+      | undefined;
     if (!row) return null;
-    return paragraphRowFromIdentity(row);
+    const mapped = paragraphRowFromIdentity(row);
+    const cbetaId = cbetaIdFromCanonicalId(id) ?? getCbetaIdForSutra(row.sutraId);
+    return ensureBlockRoles([mapped], cbetaId)[0] ?? null;
   }
 
+  const identityCols = hasRole
+    ? paragraphIdentitySelectSql()
+    : `id, sutra_id as sutraId, juan_seq as chapterSeq, seq, colloquial, NULL as blockRole`;
   const row = db
-    .prepare(`SELECT ${paragraphIdentitySelectSql()} FROM paragraph WHERE id = ?`)
+    .prepare(`SELECT ${identityCols} FROM paragraph WHERE id = ?`)
     .get(id) as ParagraphIdentityRow | undefined;
   if (!row) return null;
 
@@ -267,17 +342,19 @@ export function getParagraphById(id: string): ParagraphRow | null {
 
   try {
     const body = readParagraphBody(cbetaId, id);
-    return {
+    const mapped: ParagraphRow = {
       id: row.id,
       sutraId: row.sutraId,
       chapterSeq: row.chapterSeq,
       seq: row.seq,
       text: body?.text ?? "",
       colloquial: row.colloquial ?? body?.colloquial ?? null,
+      blockRole: (row.blockRole as BlockRole | null) ?? null,
     };
+    return ensureBlockRoles([mapped], cbetaId)[0] ?? null;
   } catch (e) {
     if (e instanceof CorpusNotAvailableError) {
-      return paragraphRowFromIdentity(row);
+      return ensureBlockRoles([paragraphRowFromIdentity(row)], cbetaId)[0] ?? null;
     }
     throw e;
   }

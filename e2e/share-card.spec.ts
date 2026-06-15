@@ -15,7 +15,8 @@ test.describe("share card export", () => {
       return;
     }
 
-    await page.getByTestId("reader-toolbar").getByRole("button", { name: "分享" }).click();
+    await page.locator("#reader-content").click({ button: "right" });
+    await page.getByTestId("reader-context-share").click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button", { name: "创建分享链接" }).click();
     await expect(page.getByText("分享链接")).toBeVisible({ timeout: 15000 });
@@ -30,7 +31,9 @@ test.describe("share card export", () => {
     await page.goto(sharePath, { waitUntil: "domcontentloaded" });
 
     await expect(page.getByTestId("share-card-export")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("正信•经藏")).toBeVisible();
+    await expect(
+      page.getByTestId("share-card-export").getByText("正信•经藏", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: /下载图片/ })).toBeVisible();
 
     const downloadPromise = page.waitForEvent("download", { timeout: 20000 }).catch(() => null);

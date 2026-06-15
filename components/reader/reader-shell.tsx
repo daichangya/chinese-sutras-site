@@ -5,7 +5,9 @@ import Link from "next/link";
 import { GaijiText } from "@/components/reader/gaiji-text";
 import { PinyinRubyText } from "@/components/reader/pinyin-ruby-text";
 import { ReadingProgress, useReaderPrefsInit } from "@/components/reader/reader-preferences";
-import { ReaderToolbar, type ReaderPanel } from "@/components/reader/reader-toolbar";
+import type { ReaderPanel } from "@/components/reader/reader-panel";
+import { ReaderFab } from "@/components/reader/reader-fab";
+import { ReaderContextMenu } from "@/components/reader/reader-context-menu";
 import { ReaderPanelDrawer } from "@/components/reader/reader-panel-drawer";
 import { ChapterNav } from "@/components/reader/chapter-nav";
 import { ComprehensionPanel } from "@/components/reader/comprehension-panel";
@@ -14,6 +16,11 @@ import { ReaderToc } from "@/components/reader/reader-toc";
 import { useBookmarks } from "@/lib/bookmarks/use-bookmarks";
 import { getReaderTextSelection } from "@/lib/reader/reader-selection";
 import { useReadingProgress } from "@/lib/reader/use-reading-progress";
+import { useReaderNavigation } from "@/lib/reader/use-reader-navigation";
+import { useReaderSpeech } from "@/lib/reader/use-reader-speech";
+import { primeSpeechSynthesis } from "@/lib/reader/speech/web-speech-adapter";
+import { ReaderSpeechBar } from "@/components/reader/reader-speech-bar";
+import { cn } from "@/lib/utils";
 import type { ParagraphRow, SutraRow } from "@/lib/sutra/queries";
 
 /** 简体 → 繁体（按需转换，不存 DB） */
@@ -31,12 +38,14 @@ async function s2tText(text: string): Promise<string> {
 export function ReaderShell({
   sutra,
   paragraphs,
+  auxiliaryParagraphs = [],
   related,
   chapters = [],
   currentChapter = 0,
 }: {
   sutra: SutraRow;
   paragraphs: ParagraphRow[];
+  auxiliaryParagraphs?: ParagraphRow[];
   related: SutraRow[];
   chapters?: number[];
   currentChapter?: number;
@@ -45,6 +54,7 @@ export function ReaderShell({
   const [showPinyin, setShowPinyin] = useState(false);
   const [showTraditional, setShowTraditional] = useState(false);
   const [traditionalTexts, setTraditionalTexts] = useState<Record<string, string>>({});
+  const [prefaceExpanded, setPrefaceExpanded] = useState(false);
   type TranslatorPerson = {
     id: string;
     slug?: string;
@@ -83,6 +93,7 @@ export function ReaderShell({
       const readerSelection = getReaderTextSelection();
       if (readerSelection) {
         setSelectedText(readerSelection.text);
+        setComprehensionFetchRequest(null);
         if (readerSelection.paragraphId) {
           setActiveParagraphId(readerSelection.paragraphId);
         }
@@ -95,11 +106,20 @@ export function ReaderShell({
 
   const hasColloquial = paragraphs.some((p) => p.colloquial);
   const { addBookmark, isBookmarked, loading: bookmarksLoading } = useBookmarks();
-  const [activeParagraphId, setActiveParagraphId] = useState(paragraphs[0]?.id);
+  const navigation = useReaderNavigation({
+    paragraphs,
+    sutraSlug: sutra.slug,
+    sutraId: sutra.id,
+  });
+  const { activeParagraphId, setActiveParagraphId, goToParagraph, getChapterHref } = navigation;
   const [selectedText, setSelectedText] = useState("");
   const [shareParagraph, setShareParagraph] = useState<ParagraphRow | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<ReaderPanel>(null);
+  const [comprehensionFetchRequest, setComprehensionFetchRequest] = useState<{
+    tab: "dictionary" | "explain";
+    nonce: number;
+  } | null>(null);
   const [, bumpFont] = useState(0);
 
   function openShareDialog(p: ParagraphRow) {
@@ -112,7 +132,7 @@ export function ReaderShell({
     let cancelled = false;
     const convert = async () => {
       const result: Record<string, string> = {};
-      for (const p of paragraphs) {
+      for (const p of [...auxiliaryParagraphs, ...paragraphs]) {
         const display = vernacular && p.colloquial ? p.colloquial : p.text;
         if (!traditionalTexts[p.id]) {
           result[p.id] = await s2tText(display);
@@ -166,6 +186,54 @@ export function ReaderShell({
     return raw;
   }
 
+  const speech = useReaderSpeech({
+    paragraphs,
+    viewContext: { vernacular, showTraditional, traditionalTexts },
+    activeParagraphId,
+    onActiveParagraphChange: setActiveParagraphId,
+    sutraTitle: sutra.title,
+  });
+
+  const speechParagraphId = speech.isActive ? speech.currentParagraphId : undefined;
+
+  function handleSpeech() {
+    primeSpeechSynthesis();
+    if (speech.isActive) {
+      speech.togglePause();
+    } else {
+      speech.play();
+    }
+  }
+
+  useEffect(() => {
+    speech.stop();
+  }, [currentChapter, sutra.slug]);
+
+  function handleSpeechFromParagraph(paragraphId: string) {
+    primeSpeechSynthesis();
+    speech.playFromParagraph(paragraphId);
+  }
+
+  function openComprehensionTab(tab: "dictionary" | "explain", text: string, paragraphId?: string) {
+    if (paragraphId) setActiveParagraphId(paragraphId);
+    setSelectedText(text);
+    setComprehensionFetchRequest({ tab, nonce: Date.now() });
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1279px)").matches) {
+      setActivePanel("comprehension");
+    }
+  }
+
+  async function handleContextCopy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // clipboard may be unavailable
+    }
+  }
+
+  const parallelHref = `/parallel/${sutra.slug}`;
+  const copybookHref = `/sutra/${sutra.slug}/copybook${chapters.length > 0 ? `?chapter=${currentChapter}` : ""}`;
+
   return (
     <>
       <ReadingProgress />
@@ -198,32 +266,6 @@ export function ReaderShell({
                 </p>
               )}
             </div>
-            <div className="w-full xl:w-auto">
-              <ReaderToolbar
-                activePanel={activePanel}
-                onOpenPanel={setActivePanel}
-                onFontDown={() => bumpFont((n) => n + 1)}
-                onFontUp={() => bumpFont((n) => n + 1)}
-                onBookmark={toggleBookmark}
-                onShare={() => {
-                  const p = paragraphs.find((x) => x.id === activeParagraphId) ?? paragraphs[0];
-                  if (p) openShareDialog(p);
-                }}
-                bookmarked={alreadyBookmarked}
-                bookmarkDisabled={bookmarksLoading}
-                parallelHref={`/parallel/${sutra.slug}`}
-                copybookHref={`/sutra/${sutra.slug}/copybook${chapters.length > 0 ? `?chapter=${currentChapter}` : ""}`}
-                hasColloquial={hasColloquial}
-                vernacular={vernacular}
-                onToggleVernacular={() => setVernacular((v) => !v)}
-                showTraditional={showTraditional}
-                onToggleTraditional={() => {
-                  setShowTraditional((v) => !v);
-                  localStorage.setItem("jx-traditional", showTraditional ? "0" : "1");
-                }}
-                onPinyinChange={setShowPinyin}
-              />
-            </div>
           </div>
         </header>
 
@@ -236,36 +278,94 @@ export function ReaderShell({
 
         <div className="flex flex-col xl:flex-row xl:gap-6">
           <ReaderToc
-            sutraSlug={sutra.slug}
             paragraphs={paragraphs}
             activeParagraphId={activeParagraphId}
             chapters={chapters}
             currentChapter={currentChapter}
+            onNavigateParagraph={goToParagraph}
+            getChapterHref={getChapterHref}
           />
 
           <div className="flex min-w-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_var(--jx-sidebar-width)] lg:gap-10">
-            <article
-              className="prose-jx reader-body animate-jx-fade-s"
-              id="reader-content"
-              aria-label={`${sutra.title} - 正文`}
-              onMouseUp={handleReaderMouseUp}
+            <ReaderContextMenu
+              paragraphs={paragraphs}
+              activeParagraphId={activeParagraphId}
+              onShare={(paragraphId) => {
+                const p = paragraphs.find((x) => x.id === paragraphId);
+                if (p) openShareDialog(p);
+              }}
+              onCopy={handleContextCopy}
+              onDictionary={(text, paragraphId) =>
+                openComprehensionTab("dictionary", text, paragraphId)
+              }
+              onExplain={(text, paragraphId) =>
+                openComprehensionTab("explain", text, paragraphId)
+              }
+              onSpeechFromParagraph={handleSpeechFromParagraph}
             >
-              {paragraphs.map((p, idx) => (
-                <p
-                  key={p.id}
-                  id={`p-${p.seq}`}
-                  data-paragraph-id={p.id}
-                  className={idx === 0 ? "animate-jx-fade" : undefined}
-                  style={idx === 0 ? { animationDelay: "100ms" } : undefined}
-                >
-                  {showPinyin ? (
-                    <PinyinRubyText text={getDisplayText(p)} />
-                  ) : (
-                    <GaijiText text={getDisplayText(p)} />
-                  )}
-                </p>
-              ))}
-            </article>
+              <article
+                className={cn(
+                  "prose-jx reader-body animate-jx-fade-s",
+                  speech.isActive && "pb-24",
+                )}
+                id="reader-content"
+                tabIndex={-1}
+                aria-label={`${sutra.title} - 正文`}
+                onMouseUp={handleReaderMouseUp}
+              >
+                {auxiliaryParagraphs.length > 0 && (
+                  <section className="jx-reader-preface mb-8" aria-label="经前序跋">
+                    <button
+                      type="button"
+                      onClick={() => setPrefaceExpanded((v) => !v)}
+                      className="flex w-full items-center gap-2 rounded-lg border border-[var(--jx-border)]/60 bg-[var(--jx-paper-deep)]/50 px-4 py-2.5 text-left text-sm text-[var(--muted)] transition-colors hover:border-[var(--jx-border)] hover:text-[var(--foreground)]"
+                      aria-expanded={prefaceExpanded}
+                    >
+                      <span className="jx-section-label shrink-0">经前序跋</span>
+                      <span className="text-xs">
+                        {auxiliaryParagraphs.length} 段 · {prefaceExpanded ? "收起" : "展开"}
+                      </span>
+                    </button>
+                    {prefaceExpanded && (
+                      <div className="mt-4 space-y-0">
+                        {auxiliaryParagraphs.map((p) => (
+                          <p
+                            key={p.id}
+                            id={`p-${p.seq}`}
+                            data-paragraph-id={p.id}
+                            className="jx-paragraph-preface"
+                          >
+                            {showPinyin ? (
+                              <PinyinRubyText text={getDisplayText(p)} />
+                            ) : (
+                              <GaijiText text={getDisplayText(p)} />
+                            )}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                )}
+                {paragraphs.map((p, idx) => (
+                  <p
+                    key={p.id}
+                    id={`p-${p.seq}`}
+                    data-paragraph-id={p.id}
+                    className={cn(
+                      idx === 0 && "jx-paragraph-opening animate-jx-fade",
+                      speechParagraphId === p.id && "jx-speech-active",
+                    )}
+                    style={idx === 0 ? { animationDelay: "100ms" } : undefined}
+                  >
+                    {showPinyin ? (
+                      <PinyinRubyText text={getDisplayText(p)} />
+                    ) : (
+                      <GaijiText text={getDisplayText(p)} />
+                    )}
+                  </p>
+                ))}
+              </article>
+            </ReaderContextMenu>
 
             <div className="hidden xl:block">
               <ComprehensionPanel
@@ -276,6 +376,7 @@ export function ReaderShell({
                 paragraphId={activeParagraphId}
                 translatorLabel={translatorLabel}
                 translatorPerson={translatorPerson}
+                requestedFetch={comprehensionFetchRequest}
               />
             </div>
           </div>
@@ -307,11 +408,13 @@ export function ReaderShell({
         {activePanel === "toc" && (
           <ReaderToc
             variant="embedded"
-            sutraSlug={sutra.slug}
             paragraphs={paragraphs}
             activeParagraphId={activeParagraphId}
             chapters={chapters}
             currentChapter={currentChapter}
+            onNavigateParagraph={goToParagraph}
+            getChapterHref={getChapterHref}
+            onAfterNavigate={() => setActivePanel(null)}
           />
         )}
         {activePanel === "comprehension" && (
@@ -323,6 +426,7 @@ export function ReaderShell({
             paragraphId={activeParagraphId}
             translatorLabel={translatorLabel}
             translatorPerson={translatorPerson}
+            requestedFetch={comprehensionFetchRequest}
           />
         )}
       </ReaderPanelDrawer>
@@ -342,6 +446,51 @@ export function ReaderShell({
         }
         open={shareOpen}
         onOpenChange={setShareOpen}
+      />
+
+      <ReaderFab
+        activePanel={activePanel}
+        onOpenPanel={setActivePanel}
+        onBookmark={toggleBookmark}
+        bookmarked={alreadyBookmarked}
+        bookmarkDisabled={bookmarksLoading}
+        onSpeech={handleSpeech}
+        speechActive={speech.isActive}
+        onFontChange={() => bumpFont((n) => n + 1)}
+        onPinyinChange={setShowPinyin}
+        showTraditional={showTraditional}
+        onToggleTraditional={() => {
+          setShowTraditional((v) => !v);
+          localStorage.setItem("jx-traditional", showTraditional ? "0" : "1");
+        }}
+        hasColloquial={hasColloquial}
+        vernacular={vernacular}
+        onToggleVernacular={() => setVernacular((v) => !v)}
+        cloudAvailable={speech.cloudAvailable}
+        speechEngine={speech.engine}
+        speechRate={speech.rate}
+        onSpeechEngineChange={speech.setEngine}
+        onSpeechRateChange={speech.setRate}
+        parallelHref={parallelHref}
+        copybookHref={copybookHref}
+        speechBarVisible={speech.isActive}
+      />
+
+      <ReaderSpeechBar
+        visible={speech.isActive}
+        state={speech.state}
+        engine={speech.engine}
+        rate={speech.rate}
+        progress={speech.progress}
+        fallbackNote={speech.fallbackNote}
+        cloudAvailable={speech.cloudAvailable}
+        sutraTitle={sutra.title}
+        onTogglePause={speech.togglePause}
+        onStop={speech.stop}
+        onSkipPrev={speech.skipPrev}
+        onSkipNext={speech.skipNext}
+        onCycleRate={speech.cycleRate}
+        onSetEngine={speech.setEngine}
       />
     </>
   );

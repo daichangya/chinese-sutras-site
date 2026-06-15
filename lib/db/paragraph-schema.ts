@@ -29,7 +29,7 @@ export function requireParagraphTextColumn(db: Database.Database): void {
 }
 
 export function paragraphIdentitySelectSql(): string {
-  return `id, sutra_id as sutraId, juan_seq as chapterSeq, seq, colloquial`;
+  return `id, sutra_id as sutraId, juan_seq as chapterSeq, seq, colloquial, block_role as blockRole`;
 }
 
 export function paragraphSelectSql(): string {

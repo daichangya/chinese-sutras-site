@@ -118,7 +118,7 @@ ensureColumn("paragraph", "content_hash", `ALTER TABLE paragraph ADD COLUMN cont
 ensureColumn("paragraph", "commentary", `ALTER TABLE paragraph ADD COLUMN commentary TEXT`);
 ensureColumn("paragraph", "lecture", `ALTER TABLE paragraph ADD COLUMN lecture TEXT`);
 ensureColumn("paragraph", "juan_seq", `ALTER TABLE paragraph ADD COLUMN juan_seq INTEGER NOT NULL DEFAULT 0`);
-ensureColumn("paragraph", "text", `ALTER TABLE paragraph ADD COLUMN text TEXT NOT NULL DEFAULT ''`);
+ensureColumn("paragraph", "block_role", `ALTER TABLE paragraph ADD COLUMN block_role TEXT`);
 ensureColumn("daily_verse", "snippet_text", `ALTER TABLE daily_verse ADD COLUMN snippet_text TEXT`);
 ensureColumn("daily_verse", "source_title", `ALTER TABLE daily_verse ADD COLUMN source_title TEXT`);
 

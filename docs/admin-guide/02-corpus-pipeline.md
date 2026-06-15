@@ -34,6 +34,21 @@ npm run corpus:import -- --md-only
 
 （以 `scripts/import-corpus.ts` 实际支持的 flag 为准。）
 
+### 正文与序跋（`block_role`）
+
+语料生成默认 `stripPreface=true`（可用 `--no-strip-preface` 保留序文进主 MD）：
+
+```bash
+npm run corpus:gen -- --cbeta-id T08n0251   # 心经等 MVP 经
+npm run corpus:import -- --md-only --cbeta-id T08n0251
+```
+
+- `_index/blocks.jsonl` 每条块含 `block_role`（`preface` / `body` / `verse` 等）
+- 导入时写入 `paragraph.block_role`；`char_count` 仅统计正文段
+- 阅读器默认只展示 `body`/`verse`；序跋在「经前序跋」折叠区
+
+旧 index 无 `block_role` 时，导入层按 `觀自在菩薩` 等锚点推断（见 `lib/corpus-v3/infer-block-role.ts`）。
+
 ### 简体优先流水线（推荐）
 
 网站与 SQLite 以**简体中文**为用户面真相源；语料仓库保留 `原文/` 繁体供 CBETA 对照。
@@ -181,7 +196,7 @@ npm run daily:refresh    # 按策略刷新经句
 
 - [ ] `/canon` 显示部类与经目
 - [ ] `/search?q=空` 有段落/经目结果
-- [ ] `/sutra/xinjing`（或任意已导入 slug）可阅读
+- [ ] `/sutra/xinjing` 首屏正文含「观自在」，序文不在默认视图（可展开「经前序跋」）
 - [ ] 首页统计条数字合理
 
 ---

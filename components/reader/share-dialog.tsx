@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Share, Link, Image, X, Check } from "lucide-react";
 import { brandShareAttribution } from "@/lib/brand";
+import { READER_CONTENT_ID } from "@/lib/reader/reader-selection";
 
 interface ShareParagraph {
   id: string;
@@ -86,9 +87,23 @@ export function ShareDialog({
     setError(null);
   }
 
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) handleReset();
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      document.getElementById(READER_CONTENT_ID)?.focus({ preventScroll: true });
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-[var(--jx-paper)] border-[var(--jx-border)]">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="max-w-md bg-[var(--jx-paper)] border-[var(--jx-border)]"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          document.getElementById(READER_CONTENT_ID)?.focus({ preventScroll: true });
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-[var(--foreground)]">
             <Share className="w-4 h-4" aria-hidden="true" />
@@ -164,7 +179,7 @@ export function ShareDialog({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             className="text-[var(--muted)]"
           >
             <X className="w-3 h-3 mr-1" />

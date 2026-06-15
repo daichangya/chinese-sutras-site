@@ -4,6 +4,7 @@
  */
 import fs from "fs";
 import path from "path";
+import type { BlockRole } from "@/lib/cbeta/block-role";
 import type { StructureBlock, StructureJuan } from "@/lib/cbeta/structure";
 
 export type BlockIndexEntry = {
@@ -14,6 +15,7 @@ export type BlockIndexEntry = {
   parser_pid: string;
   juan_num: number;
   kind: "prose" | "verse";
+  block_role?: BlockRole;
 };
 
 export function blocksIndexPath(sutraRoot: string): string {
@@ -35,6 +37,7 @@ export function writeBlocksIndex(sutraRoot: string, juans: StructureJuan[]): voi
         parser_pid: b.parserPid,
         juan_num: juanNum,
         kind: b.kind,
+        block_role: b.blockRole,
       };
       lines.push(JSON.stringify(entry));
     }
@@ -65,6 +68,7 @@ export function structureBlocksFromIndex(entries: BlockIndexEntry[]): StructureB
     contentHash: e.content_hash,
     parserPid: e.parser_pid || `p${String(i + 1).padStart(6, "0")}`,
     seq: i + 1,
+    blockRole: e.block_role ?? "body",
   }));
 }
 

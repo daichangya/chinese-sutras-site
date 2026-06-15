@@ -34,6 +34,7 @@ yarn-error.log*
 # data
 /data/*.db
 /data/*.db-*
+/data/tts-cache/
 /vendor/
 
 # markdown sutras corpus (separate git repo)

@@ -5,7 +5,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import type { ReaderPanel } from "@/components/reader/reader-toolbar";
+import type { ReaderPanel } from "@/components/reader/reader-panel";
 
 const PANEL_TITLES: Record<Exclude<ReaderPanel, null>, string> = {
   toc: "目录",

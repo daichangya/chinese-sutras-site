@@ -208,9 +208,25 @@ body::before {
   line-height: var(--jx-leading);
 }
 
+.prose-jx p[id] {
+  scroll-margin-top: calc(var(--jx-header-height, 3.5rem) + 1rem);
+}
+
 .prose-jx p:first-of-type {
   text-indent: 0;
   font-size: calc(1.2rem * var(--jx-font-scale));
+}
+
+.prose-jx.reader-body > p.jx-paragraph-opening {
+  text-indent: 0;
+  font-size: calc(1.2rem * var(--jx-font-scale));
+}
+
+.prose-jx .jx-paragraph-preface {
+  font-size: calc(0.95rem * var(--jx-font-scale));
+  color: var(--muted);
+  text-indent: 2em;
+  line-height: 1.75;
 }
 
 /* 无尽藏式段间距——宽松呼吸 */
@@ -243,6 +259,9 @@ body::before {
     font-size: calc(1rem * var(--jx-font-scale));
   }
   .prose-jx p:first-of-type {
+    font-size: calc(1.05rem * var(--jx-font-scale));
+  }
+  .prose-jx.reader-body > p.jx-paragraph-opening {
     font-size: calc(1.05rem * var(--jx-font-scale));
   }
 }
@@ -372,16 +391,6 @@ body::before {
 }
 
 /* ===== 阅读器装饰 ===== */
-
-/* 首段大首字（无尽藏式仪式感 — 仅阅读器正文） */
-.prose-jx.reader-body > p:first-of-type::first-letter {
-  font-size: 1.6em;
-  float: left;
-  line-height: 1;
-  margin-right: 0.1em;
-  color: var(--jx-accent);
-  font-weight: 600;
-}
 
 /* 分隔线装饰 */
 .jx-divider {
@@ -779,6 +788,108 @@ body::before {
 
 .dark .jx-calendar-today {
   background: rgb(176 141 87 / 0.12);
+}
+
+/* ===== 阅读器朗读 ===== */
+
+.jx-speech-active {
+  border-left: 2px solid var(--jx-accent-cinnabar);
+  background: rgb(139 37 0 / 0.06);
+  padding-left: 0.75rem;
+  margin-left: -0.75rem;
+  border-radius: 0 0.25rem 0.25rem 0;
+  transition: background-color 0.2s ease;
+}
+
+.dark .jx-speech-active {
+  background: rgb(176 141 87 / 0.1);
+}
+
+.jx-reader-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.5rem;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.jx-reader-fab--with-speech {
+  bottom: calc(var(--jx-reader-speech-bar-height, 3.5rem) + 1rem);
+}
+
+.jx-reader-fab-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  min-width: 7.5rem;
+  padding: 0.35rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--jx-border) 80%, transparent);
+  background: color-mix(in srgb, var(--jx-paper-elevated) 94%, transparent);
+  box-shadow: var(--jx-card-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.jx-reader-fab-action {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.jx-reader-fab-action:hover {
+  background: var(--jx-paper-deep);
+  color: var(--foreground);
+}
+
+.jx-reader-fab-action--active {
+  border-color: color-mix(in srgb, var(--jx-accent-cinnabar) 35%, transparent);
+  background: color-mix(in srgb, var(--jx-accent-cinnabar) 10%, transparent);
+  color: var(--jx-accent-cinnabar);
+}
+
+.jx-reader-fab-action:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.jx-reader-fab-toggle {
+  display: inline-flex;
+  height: 3rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--jx-border) 85%, transparent);
+  background: color-mix(in srgb, var(--jx-paper-elevated) 95%, transparent);
+  color: var(--jx-accent-cinnabar);
+  box-shadow: var(--jx-card-shadow);
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.jx-reader-fab-toggle:hover {
+  background: var(--jx-paper-deep);
+}
+
+.jx-reader-speech-bar {
+  --jx-reader-speech-bar-height: 3.5rem;
+  box-shadow: 0 -4px 20px rgb(28 25 23 / 0.08);
+}
+
+.dark .jx-reader-speech-bar {
+  box-shadow: 0 -4px 20px rgb(0 0 0 / 0.35);
 }
 
 /* ===== 导航 active 态 ===== */

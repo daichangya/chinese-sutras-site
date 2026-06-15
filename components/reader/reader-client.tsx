@@ -11,12 +11,14 @@ import type { ParagraphRow, SutraRow } from "@/lib/sutra/queries";
 export function SutraReaderClient({
   sutra,
   paragraphs,
+  auxiliaryParagraphs = [],
   related,
   chapters,
   currentChapter,
 }: {
   sutra: SutraRow;
   paragraphs: ParagraphRow[];
+  auxiliaryParagraphs?: ParagraphRow[];
   related: SutraRow[];
   chapters: number[];
   currentChapter: number;
@@ -78,6 +80,7 @@ export function SutraReaderClient({
       <ReaderShell
         sutra={sutra}
         paragraphs={paragraphs}
+        auxiliaryParagraphs={auxiliaryParagraphs}
         related={related}
         chapters={chapters}
         currentChapter={currentChapter}

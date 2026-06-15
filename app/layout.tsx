@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { BrandProvider } from "@/components/layout/brand-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     icon: [{ url: "/icon", type: "image/png", sizes: "32x32" }],
     apple: [{ url: "/apple-icon", type: "image/png", sizes: "180x180" }],
   },
+};
+
+export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f8f5ef" },
     { media: "(prefers-color-scheme: dark)", color: "#0c0a09" },

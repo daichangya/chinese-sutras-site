@@ -6,6 +6,7 @@ import { brandPageTitleSuffix, getBrandName } from "@/lib/brand";
 import { getSqlite } from "@/lib/db";
 import {
   countParagraphsForSutra,
+  getAuxiliaryParagraphsForSutra,
   getParagraphsForSutra,
   getRelatedSutras,
   getSutraBySlug,
@@ -67,6 +68,9 @@ export default async function SutraPage({
   const paragraphs = needsPaging
     ? getParagraphsForSutra(sutra.id, chapterSeq)
     : getParagraphsForSutra(sutra.id);
+  const auxiliaryParagraphs = needsPaging
+    ? getAuxiliaryParagraphsForSutra(sutra.id, chapterSeq)
+    : getAuxiliaryParagraphsForSutra(sutra.id);
 
   const related = getRelatedSutras(sutra.id);
   const corpusMissing = !isCorpusMounted();
@@ -81,6 +85,7 @@ export default async function SutraPage({
       <SutraReaderClient
         sutra={sutra}
         paragraphs={paragraphs}
+        auxiliaryParagraphs={auxiliaryParagraphs}
         related={related}
         chapters={needsPaging ? chapters : []}
         currentChapter={chapterSeq}

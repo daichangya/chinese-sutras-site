@@ -55,6 +55,7 @@ export function ComprehensionPanel({
   paragraphId,
   translatorLabel,
   translatorPerson,
+  requestedFetch,
 }: {
   selection: string;
   onSelectionChange?: (text: string) => void;
@@ -63,6 +64,8 @@ export function ComprehensionPanel({
   paragraphId?: string;
   translatorLabel?: string | null;
   translatorPerson?: TranslatorPerson | null;
+  /** 仅右键/侧栏显式操作时触发辞典或 AI 请求 */
+  requestedFetch?: { tab: "dictionary" | "explain"; nonce: number } | null;
 }) {
   const [mainTab, setMainTab] = useState<MainTab>("explain");
   const [explainTab, setExplainTab] = useState<ExplainTab>("modern");
@@ -71,6 +74,12 @@ export function ComprehensionPanel({
   const [dictEntries, setDictEntries] = useState<DictEntry[]>([]);
   const [similarItems, setSimilarItems] = useState<SimilarItem[]>([]);
   const [similarLoading, setSimilarLoading] = useState(false);
+
+  useEffect(() => {
+    if (requestedFetch) {
+      setMainTab(requestedFetch.tab);
+    }
+  }, [requestedFetch]);
 
   const fetchDictionary = useCallback(async (text: string) => {
     setLoading("dictionary");
@@ -151,13 +160,21 @@ export function ComprehensionPanel({
       return;
     }
 
+    // 划词仅同步选区，不自动请求辞典 / AI（由 Tab 切换或右键菜单触发）
     setContent({});
     setDictEntries([]);
-    setMainTab("explain");
+  }, [selection]);
+
+  useEffect(() => {
+    if (!selection || !requestedFetch) return;
+
+    if (requestedFetch.tab === "dictionary") {
+      void fetchDictionary(selection);
+      return;
+    }
     setExplainTab("modern");
-    void fetchDictionary(selection);
     void fetchExplainTab("modern", selection);
-  }, [selection, paragraphId, fetchDictionary, fetchExplainTab]);
+  }, [selection, requestedFetch, fetchDictionary, fetchExplainTab]);
 
   function handlePanelMouseUp() {
     const text = window.getSelection()?.toString().trim() ?? "";
@@ -197,7 +214,7 @@ export function ComprehensionPanel({
         <div className="flex items-start gap-3 rounded-lg bg-[var(--jx-paper-deep)]/60 px-3 py-3">
           <Sparkles className="mt-0.5 size-4 shrink-0 text-[var(--jx-gold)]" aria-hidden="true" />
           <p className="text-xs leading-relaxed">
-            在经文中划选字词或句子，可查辞典、AI 解释；切换段落可查看相似经文。
+            划选后仅同步到侧栏「已选」；**不会**自动调用辞典或 AI。请切换「辞典 / 解释」Tab，或使用正文右键菜单。
           </p>
         </div>
         {translatorLabel && (
@@ -315,7 +332,10 @@ export function ComprehensionPanel({
                   <p className="text-[var(--muted)]">生成中…</p>
                 ) : (
                   <p data-testid={tab === "modern" ? "reader-ai-modern" : undefined}>
-                    {content[tab] ?? (tab === "modern" ? "加载中…" : "点击标签加载")}
+                    {content[tab] ??
+                      (tab === "modern"
+                        ? "切换到本标签或使用正文右键「AI 解释」后生成。"
+                        : "点击标签加载")}
                   </p>
                 )}
               </TabsContent>

@@ -4,15 +4,20 @@
  * @author 代长亚
  */
 import { execSync } from "child_process";
+import { isReaderBodyRole } from "@/lib/cbeta/block-role";
 import { sutraIdFromCbetaId } from "@/lib/corpus/ids";
-import { getSqlite, closeDb } from "@/lib/db";
+import { getSqlite, closeDb } from "@/lib/db/sqlite";
 import { buildImportBundle } from "@/lib/corpus-v3/import-align";
-import { findSutraMetaFiles } from "@/lib/corpus-v3/meta";
+import { findSutraMetaFiles, loadSutraMeta } from "@/lib/corpus-v3/meta";
 import { resolveCorpusRoot } from "@/lib/corpus-v3/root-path";
 
 const corpusRoot = resolveCorpusRoot();
 const xmlRoot = process.env.CBETA_XML_DIR ?? "vendor/xml-p5";
 const mdOnly = process.argv.includes("--md-only");
+const cbetaIdFilter = (() => {
+  const i = process.argv.indexOf("--cbeta-id");
+  return i >= 0 ? process.argv[i + 1] : undefined;
+})();
 
 const db = getSqlite();
 
@@ -32,12 +37,13 @@ const upsertChapter = db.prepare(`
 `);
 
 const upsertParagraph = db.prepare(`
-  INSERT INTO paragraph (id, sutra_id, juan_seq, start_ref, end_ref, parser_pid, content_hash, seq, text, colloquial, commentary, lecture)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO paragraph (id, sutra_id, juan_seq, start_ref, end_ref, parser_pid, content_hash, seq, text, colloquial, commentary, lecture, block_role)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     sutra_id=excluded.sutra_id, juan_seq=excluded.juan_seq, start_ref=excluded.start_ref, end_ref=excluded.end_ref,
     parser_pid=excluded.parser_pid, content_hash=excluded.content_hash, seq=excluded.seq,
-    text=excluded.text, colloquial=excluded.colloquial, commentary=excluded.commentary, lecture=excluded.lecture
+    text=excluded.text, colloquial=excluded.colloquial, commentary=excluded.commentary, lecture=excluded.lecture,
+    block_role=excluded.block_role
 `);
 
 const deleteParagraph = db.prepare(`DELETE FROM paragraph WHERE id = ?`);
@@ -61,7 +67,9 @@ function importOneSutra(metaPath: string): { paragraphs: number; warnings: numbe
     warnCount += 1;
   }
 
-  const charCount = agg.paragraphs.reduce((s, p) => s + p.text.length, 0);
+  const charCount = agg.paragraphs
+    .filter((p) => isReaderBodyRole(p.blockRole))
+    .reduce((s, p) => s + p.text.length, 0);
   const sutraId = sutraIdFromCbetaId(agg.cbetaId);
 
   const importTx = db.transaction(() => {
@@ -113,6 +121,7 @@ function importOneSutra(metaPath: string): { paragraphs: number; warnings: numbe
         p.colloquial,
         p.commentary,
         p.lecture,
+        p.blockRole,
       );
     }
   });
@@ -126,7 +135,10 @@ function importOneSutra(metaPath: string): { paragraphs: number; warnings: numbe
   return { paragraphs: agg.paragraphs.length, warnings: warnCount };
 }
 
-const metaFiles = findSutraMetaFiles(corpusRoot);
+const metaFiles = findSutraMetaFiles(corpusRoot).filter((metaPath) => {
+  if (!cbetaIdFilter) return true;
+  return loadSutraMeta(metaPath).cbetaId === cbetaIdFilter;
+});
 if (metaFiles.length === 0) {
   console.error(`No meta.yaml found under ${corpusRoot}`);
   process.exit(1);
